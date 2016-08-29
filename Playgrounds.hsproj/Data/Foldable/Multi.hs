@@ -1,5 +1,5 @@
 module Data.Foldable.Multi where
-  
+
 import Data.Coerce
 
 newtype RecFold a b = 
