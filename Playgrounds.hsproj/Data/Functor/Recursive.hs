@@ -21,8 +21,7 @@ class Functor (Unfix r) => Recursive r where
   zygo :: (Unfix r a -> a) -> (Unfix r (a,b) -> b) -> r -> b
   zygo palg alg = snd . f where f = (palg . fmap fst &&& alg) . fmap f . project
 
-type family Fix (r :: * -> *) :: * where
-  Fix (Unfix r) = r
+type family Fix (r :: * -> *) :: * where Fix (Unfix r) = r
 
 class Functor (Unfix r) => Corecursive r where
   embed :: Unfix r r -> r

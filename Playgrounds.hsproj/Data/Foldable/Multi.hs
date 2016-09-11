@@ -1,6 +1,7 @@
 module Data.Foldable.Multi where
 
 import Data.Coerce
+import Data.Traversable
 
 newtype RecFold a b = 
   RecFold { runRecFold :: a -> (RecFold a b -> b) -> b }
@@ -37,3 +38,13 @@ zip' = zipWith' (,)
 infixr 9 .#
 (.#) :: Coercible a b => (a -> b) -> (c -> a) -> c -> b
 (.#) _ f = coerce f
+
+newtype RecAccu a b =
+  RecAccu { runRecAccu :: a -> (RecAccu a b, b) }
+   
+zipInto :: (Traversable t, Foldable f)
+        => (a -> Maybe b -> c) -> t a -> f b -> t c
+zipInto f xs =
+  snd . flip (mapAccumL runRecAccu) xs . RecAccu . foldr h i where
+    i e = (RecAccu i, f e Nothing)
+    h e2 a e1 = (RecAccu a, f e1 (Just e2))

@@ -12,16 +12,28 @@ Executable Playgrounds
   buildable: True
   build-depends:
       base -any,
-      mtl -any
+      mtl -any,
+      text -any,
+      transformers -any
   other-modules:
       Control.Monad.Church.State
       Control.Monad.Church.Writer
+      Control.Monad.Loops
+      Control.Monad.FastWriterT
       Control.Monad.FastWriter
+      Control.Monad.Complexity
+      Control.Monad.IState
+      Control.Monad.Split
+      Data.BoolQuery
       Data.Church.List
       Data.Church.Bool
       Data.Church.Nat
       Data.Church.Maybe
       Data.Church.Pair
+      Data.Church.Parser
+      Data.Foldable.Multi
+      Data.FuncChain
+      Data.Tree
+      Data.Expr
       Data.Functor.Recursive
       Data.Scott.List
-      Data.Foldable.Multi

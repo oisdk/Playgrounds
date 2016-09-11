@@ -8,7 +8,7 @@ import Prelude hiding ((++), concat)
 
 newtype List a = L
   { l :: forall b. b -> (a -> List a -> b) -> b }
-  
+
 nil :: List a
 nil = L const
 
@@ -44,8 +44,9 @@ instance Applicative List where
   fs <*> xs = concat (fmap (<$> xs) fs)
   
 instance Monad List where
-  (>>=) xs f = concat (fmap f xs)
+  xs >>= f = concat (fmap f xs)
   
 instance Monoid (List a) where
   mempty = nil
   mappend = (++)
+  
