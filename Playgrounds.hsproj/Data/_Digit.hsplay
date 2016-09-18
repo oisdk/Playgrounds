@@ -1,0 +1,2 @@
+-- Haskell Playground 1.0
+quickCheck $ \n m -> compare n m == compare (fromInteger n) (fromInteger m :: Whole)

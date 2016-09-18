@@ -12,6 +12,8 @@ Executable Playgrounds
   buildable: True
   build-depends:
       base -any,
+      lens -any,
+      QuickCheck -any,
       mtl -any,
       text -any,
       transformers -any
@@ -19,6 +21,7 @@ Executable Playgrounds
       Control.Monad.Church.State
       Control.Monad.Church.Writer
       Control.Monad.Loops
+      Control.Monad.Undo
       Control.Monad.FastWriterT
       Control.Monad.FastWriter
       Control.Monad.Complexity
@@ -31,9 +34,13 @@ Executable Playgrounds
       Data.Church.Maybe
       Data.Church.Pair
       Data.Church.Parser
+      Data.NonEmpty
+      Data.Function.Blackbird
       Data.Foldable.Multi
       Data.FuncChain
+      Data.Digit
       Data.Tree
       Data.Expr
       Data.Functor.Recursive
+      Data.HetList
       Data.Scott.List

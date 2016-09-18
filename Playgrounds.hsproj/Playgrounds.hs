@@ -1,6 +1,9 @@
+import Control.Monad.Writer
+import Data.List
 import Data.Foldable
+import Control.Lens
 
-count :: Foldable f => (a -> Bool) -> f a -> Int
-count p xs = foldl' f 0 xs where
-  f a e | p e = a + 1
-        | otherwise = a
+qsort :: Ord a => [a] -> [a]
+qsort [] = []
+qsort (x:xs) = qsort lt ++ [x] ++ qsort gt where
+  (lt,gt) = partition (<x) xs
