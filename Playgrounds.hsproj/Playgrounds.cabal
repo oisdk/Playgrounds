@@ -11,11 +11,14 @@ Executable Playgrounds
   main-is: Playgrounds.hs
   buildable: True
   build-depends:
-      base -any,
-      QuickCheck -any,
+      transformers-base -any,
       mtl -any,
       text -any,
-      transformers -any
+      transformers -any,
+      monad-control -any,
+      base -any,
+      QuickCheck -any,
+      mmorph -any
   other-modules:
       Control.Monad.Church.State
       Control.Monad.Church.Writer
@@ -26,6 +29,8 @@ Executable Playgrounds
       Control.Monad.Complexity
       Control.Monad.IState
       Control.Monad.Prob
+      Control.Monad.ProbTrans
+      Control.Monad.ListT
       Control.Monad.Split
       Data.BoolQuery
       Data.Church.List
