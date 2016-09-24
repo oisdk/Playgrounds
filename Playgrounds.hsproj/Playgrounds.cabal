@@ -5,14 +5,13 @@ build-type: Simple
 license: MIT
 stability: experimental
 author: Donnacha Oisín Kidney
-x-ghc-framework-version: 7.10.3-5.9-2
-x-last-ide-version: HfM1.2.1
+x-ghc-framework-version: 7.10.3-5.18-1
+x-last-ide-version: HfM1.3.0
 Executable Playgrounds
   main-is: Playgrounds.hs
   buildable: True
   build-depends:
       base -any,
-      lens -any,
       QuickCheck -any,
       mtl -any,
       text -any,
@@ -26,6 +25,7 @@ Executable Playgrounds
       Control.Monad.FastWriter
       Control.Monad.Complexity
       Control.Monad.IState
+      Control.Monad.Prob
       Control.Monad.Split
       Data.BoolQuery
       Data.Church.List
@@ -34,13 +34,16 @@ Executable Playgrounds
       Data.Church.Maybe
       Data.Church.Pair
       Data.Church.Parser
+      Data.FancyExpr
       Data.NonEmpty
-      Data.Function.Blackbird
-      Data.Foldable.Multi
       Data.FuncChain
+      Data.Functor.Recursive
+      Data.HetList
+      Data.Function.Compose
+      Data.Function.Blackbird
+      Data.RList
+      Data.Foldable.Multi
       Data.Digit
       Data.Tree
       Data.Expr
-      Data.Functor.Recursive
-      Data.HetList
       Data.Scott.List

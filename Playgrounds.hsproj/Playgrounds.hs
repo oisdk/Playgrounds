@@ -1,7 +1,4 @@
-import Control.Monad.Writer
 import Data.List
-import Data.Foldable
-import Control.Lens
 
 qsort :: Ord a => [a] -> [a]
 qsort [] = []
