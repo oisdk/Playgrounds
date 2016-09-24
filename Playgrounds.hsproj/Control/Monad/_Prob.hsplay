@@ -1,1 +1,4 @@
 -- Haskell Playground 1.0
+let o = equalOdds [[3,3,3],[1,1]] >>= equalOdds
+
+oddsOf (1==) o + oddsOf (3==) o

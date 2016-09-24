@@ -9,15 +9,14 @@ import Data.Monoid
 
 type Odds = ListT (Writer (Product Rational))
 
-equalOdds :: Foldable f => f a -> Odds a
-equalOdds xs = foldr f undefined xs (fromIntegral (length xs - 1)) where
-  f y a 0 = pure y
-  f y a n = ListT (writer (Just (y, a (n-1)), Product (1 % n)))
+equalOdds :: [a] -> Odds a
+equalOdds [x] = pure x
+equalOdds (x:xs) = ListT (writer ((Just (x, equalOdds xs)), Product (1 % fromIntegral (length xs))))
 
-foldOdds :: (a -> Rational -> b -> b) -> b -> Odds a -> b
+foldOdds :: (a -> Rational -> b -> b) -> (Rational -> b) -> Odds a -> b
 foldOdds f b = r where
-  r = (\(x,w) -> maybe b (\(y,ys) -> f y w (r ys)) x) . fmap getProduct . runWriter . uncons
+  r = (\(x,w) -> maybe (b w) (\(y,ys) -> f y w (r ys)) x) . fmap getProduct . runWriter . uncons
   
 oddsOf :: (a -> Bool) -> Odds a -> Rational
-oddsOf p = foldOdds f 0 where
+oddsOf p = foldOdds f (const $ 1 % 2) where
   f x n r = (if p x then r + n else r) / (n + 1)

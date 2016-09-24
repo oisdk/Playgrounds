@@ -2,7 +2,7 @@
 
 module Data.Church.List where
 
-import Prelude hiding ((++), concat)
+import Prelude hiding ((++), concat, zipWith, tail)
 
 newtype List a = L { l :: forall b. (a -> b -> b) -> b -> b }
 

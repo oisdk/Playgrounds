@@ -23,4 +23,3 @@ type family (++) (xs :: [*]) (ys :: [*]) :: [*] where
 append :: FuncChain b xs c -> FuncChain a ys b -> FuncChain a (xs ++ (b ': ys)) c
 append (Fn f)    gs = f :. gs
 append (f :. fs) gs = f :. (append fs gs)
-

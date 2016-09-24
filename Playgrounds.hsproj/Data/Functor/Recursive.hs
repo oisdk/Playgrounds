@@ -4,6 +4,7 @@
 {-# LANGUAGE DeriveFoldable #-}
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE RankNTypes #-}
 
 module Data.Functor.Recursive where
 
@@ -48,10 +49,11 @@ anaM g = a where a = fmap embed . traverse a <=< g
 -- it can be used to encode "zip-like" functions.
 zipo :: (Recursive g, Recursive h) 
      => (Unfix g (h -> c) -> Unfix h h -> c) -- ^ An algebra for two Foldables
-      -> g                                  -- ^ first fixed point
-      -> h                                  -- ^ second
-      -> c                                  -- ^ result
+     -> g                                  -- ^ first fixed point
+     -> h                                  -- ^ second
+     -> c                                  -- ^ result
 zipo alg = cata zalg where zalg x = alg x . project
+
 
 data instance Unfix [a] r = 
   Nil | Cons a r deriving (Functor, Foldable, Traversable)
