@@ -4,7 +4,7 @@ module Data.Scott.List where
   
 import Data.Function
 import Data.Monoid
-import Prelude hiding ((++), concat)
+import Prelude hiding ((++), concat, tail, head, zip, zipWith)
 
 newtype List a = L
   { l :: forall b. b -> (a -> List a -> b) -> b }
@@ -50,3 +50,16 @@ instance Monoid (List a) where
   mempty = nil
   mappend = (++)
   
+newtype ScottZip a b =
+  ScottZip { runScottZip :: a -> (ScottZip a b -> b) -> b }
+
+foldr2 :: (Foldable f, Foldable g) => (a -> b -> c -> c) -> c -> f a -> g b -> c
+foldr2 c i xs = foldr f (const i) xs . ScottZip . foldr g (\_ _ -> i) where
+ g e2 r2 e1 r1 = c e1 e2 (r1 (ScottZip r2))
+ f e r (ScottZip x) = x e r
+  
+zipWith :: (a -> b -> c) -> List a -> List b -> List c
+zipWith f = foldr2 (\x y a -> f x y <: a) nil
+
+zip :: List a -> List b -> List (a,b)
+zip = zipWith (,)
