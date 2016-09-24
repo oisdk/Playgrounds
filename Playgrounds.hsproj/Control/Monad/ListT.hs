@@ -1,4 +1,7 @@
 {-# LANGUAGE UndecidableInstances, LambdaCase #-}
+
+-- https://hackage.haskell.org/package/list-t-1/docs/ListT.html
+
 module Control.Monad.ListT
 (
   ListT(..),
