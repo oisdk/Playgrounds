@@ -16,8 +16,8 @@ import Data.Converge
 import Data.Uniques
 import qualified Text.ExprPrint as Print
 
-infixr 3 :&:
-infixr 2 :|:
+infixl 3 :&:
+infixl 2 :|:
 
 data Expr a = Var a
             | Lit Bool
@@ -41,12 +41,6 @@ instance Show a => Show (Expr a) where
     Not x -> Print.Unary Print.L 10 "!" x
     x :&: y -> Print.Binary Print.L 3 x " && " y
     x :|: y -> Print.Binary Print.L 2 x " || " y
---  showsPrec = flip . cata $ \case
---    V x    -> \_ -> shows x
---    L b    -> \_ -> shows b
---    N x    -> \n -> showParen (3 < n) (showChar '!' . x 3)
---    x :& y -> \n -> showParen (2 < n) (x 2 . showString " && " . y 2)
---    x :| y -> \n -> showParen (1 < n) (x 1 . showString " || " . y 1)
 
 instance Recursive (Expr a) where
   project = \case 

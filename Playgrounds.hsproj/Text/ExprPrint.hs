@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveFunctor, LambdaCase #-}
+{-# LANGUAGE DeriveFunctor, LambdaCase, RankNTypes #-}
 
 module Text.ExprPrint where
   
