@@ -33,12 +33,3 @@ zipInto f xs =
   snd . flip (mapAccumL runRecAccu) xs . RecAccu . foldr h i where
     i e = (RecAccu i, f e Nothing)
     h e2 a e1 = (RecAccu a, f e1 (Just e2))
-    
-
-
-
-
-
-
-
-

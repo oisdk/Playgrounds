@@ -22,19 +22,24 @@ Executable Playgrounds
       containers -any,
       lens -any
   other-modules:
+      Text.ExprPrint
       Text.Parse
-      Data.BoolQuery
+      Data.Uniques
       Data.Church.List
       Data.Church.Bool
       Data.Church.Nat
       Data.Church.Maybe
       Data.Church.Pair
       Data.Church.Parser
+      Data.BoolQuery
       Data.FancyExpr
+      Data.Converge
       Data.NonEmpty
       Data.FuncChain
+      Data.Safe
       Data.Functor.Recursive
       Data.HetList
+      Data.BoolSimplify
       Data.Function.Compose
       Data.Function.Blackbird
       Data.RList

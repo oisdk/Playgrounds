@@ -1,0 +1,15 @@
+-- Haskell Playground 1.0
+let a = Var 'a'
+let b = Var 'b'
+let c = Var 'c'
+let d = Var 'd'
+
+simplify $ (Not a :|: b) :&: (a :|: b)
+
+a :&: (Not c :|: a) :&: b :&: Not c
+
+states [1,2]
+
+simplify (a :&: Not a)
+
+uniques [1,2,3,1,3]
