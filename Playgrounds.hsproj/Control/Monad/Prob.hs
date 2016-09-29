@@ -13,18 +13,13 @@ pattern (:%) :: Integer -> Integer -> Rational
 pattern n :% d <- (numerator &&& denominator -> (n,d)) where
   n :% d = n % d
   
-data Odds a = Certainly a
+data Odds a = Certain a
             | Odds a Rational (Odds a)
             deriving (Functor, Foldable, Traversable)
 
-            
-probHead :: Odds a -> Rational
-probHead (Certainly _) = 1
-probHead (Odds _ (n :% d) _) = n :% (n + d)
-
 foldOdds :: (a -> Rational -> b -> b) -> (a -> b) -> Odds a -> b
 foldOdds f b = r where
-  r (Certainly x) = b x
+  r (Certain x) = b x
   r (Odds x p xs) = f x p (r xs)
 
 probOfEvent :: Eq a => a -> Odds a -> Rational
@@ -37,20 +32,14 @@ probOf p = foldOdds f b where
   b x = if p x then 1 else 0
   f x n r = (if p x then r + n else r) / (n + 1)
 
-equalOdds :: Foldable f => f a -> Maybe (Odds a)
-equalOdds xs = case length xs of
-  0 -> Nothing
-  n -> Just (foldr f undefined xs (fromIntegral (length xs - 1))) where
-    f y a 0 = Certainly y
-    f y a n = Odds y (1 % n) (a (n-1))
-  
-fromDistrib :: [(a,Integer)] -> Odds a
-fromDistrib xs = f (tot*lst) xs where
-  (tot,lst) = foldl' (\(t,_) e -> (t+e,e)) (0,undefined) (map snd xs)
-  f _ [(x,_)] = Certainly x
-  f n ((x,p):xs) = let mp = p * lst
-                       np = n - mp in Odds x (mp % np) (f np xs)
-                       
+fromDistrib :: Foldable f => f (a,Integer) -> Maybe (Odds a)
+fromDistrib = fst . foldr f (Nothing,0) where
+  f (x,p) (a,t) = (Just (o a), t + p) where
+    o = maybe (Certain x) (Odds x (p % t))
+
+equalOdds :: (Functor f, Foldable f) => f a -> Maybe (Odds a)
+equalOdds = fromDistrib . fmap (flip (,) 1)
+               
 append :: Odds a -> Rational -> Odds a -> Odds a
 append = foldOdds f Odds where
   f e r a p ys = Odds e ip (a op ys) where
@@ -61,7 +50,7 @@ flatten :: Odds (Odds a) -> Odds a
 flatten = foldOdds append id
 
 instance Applicative Odds where
-  pure = Certainly
+  pure = Certain
   fs <*> xs = flatten (fmap (<$> xs) fs)
   
 instance Monad Odds where
@@ -73,18 +62,5 @@ instance Show a => Show (Odds a) where
       [ shows x, showString " |", shows n, showChar ':', shows d, showString "| " ]
 
 compress :: Ord a => Odds a -> Odds a
-compress = fromDistrib . counts
+compress xs = let Just ys = (fromDistrib . counts) xs in ys
 
-compressEq :: Eq a => Odds a -> Odds a
-compressEq = fromDistrib . countsEq
-
-toDistrib :: Odds a -> [(a,Integer)]
-toDistrib xs = [ (x,numerator (p * commonDenom)) | (x,p) <- nonNorm ] where
-  nonNorm = go xs
-  go (Certainly x) = [(x,1)]
-  go (Odds x (n :% d) xs) = (x, n % tsum) : [ (y, q * (d % tsum)) | (y,q) <- go xs ] where
-    tsum = n + d
-  commonDenom = fromInteger $ foldl' (\a (_,e) -> lcm a (denominator e)) 1 nonNorm
-
-commonDenom :: [Rational] -> Integer
-commonDenom = foldl' (\a e -> lcm a (denominator e)) 1

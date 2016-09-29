@@ -5,17 +5,28 @@ module Control.Monad.BinOdds where
 import Data.Ratio
 import Control.Arrow
 import Data.Foldable
+import Data.Monoid
+import Data.List
+import Control.Applicative
+import Control.Monad
+import Data.Uniques
 
-data Odds a = Certainly a
+data Odds a = Certain a
             | Odds (Odds a) Rational (Odds a)
             deriving (Eq, Functor, Foldable, Show)
 
-pattern n :% d <- ((numerator &&& denominator) >>> (fromInteger *** fromInteger) -> (n, d))
+pattern n :% d <- ((numerator >>> fromInteger) &&& (denominator >>> fromInteger) -> (n, d))
 
 foldOdds :: (b -> Rational -> b -> b) -> (a -> b) -> Odds a -> b
 foldOdds f b = r where
-  r (Certainly x) = b x
+  r (Certain x) = b x
   r (Odds xs p ys) = f (r xs) p (r ys)
+  
+unfoldOdds :: (b -> Either a (b,Rational,b)) -> b -> Odds a
+unfoldOdds f = r where
+  r b = case f b of
+    Left a -> Certain a
+    Right (x,p,y) -> Odds (r x) p (r y)
   
 fi :: Bool -> a -> a -> a
 fi True  t _ = t
@@ -28,33 +39,41 @@ probOf e = foldOdds f b where
 
 equalOdds :: [a] -> Maybe (Odds a)
 equalOdds [] = Nothing
-equalOdds xs = Just (r xs) where
-  r [x] = Certainly x
-  r xs = case split' xs of
-    (ys,zs,Nothing) -> Odds (r ys) 1           (r zs)
-    (ys,zs,Just zn) -> Odds (r ys) ((zn+1)%zn) (r zs)
-    where 
-      split' []       = ([ ],[],Nothing)
-      split' [x]      = ([x],[],Just 0 )
-      split' (x:y:xs) = let (xx,yy,rr) = split' xs in (x:xx,y:yy,succ <$> rr)
+equalOdds xs = Just (unfoldOdds f (xs,length xs)) where
+  f ([x],_) = Left x
+  f (xs,n) = Right ((ys,l), fromIntegral l % fromIntegral r, (zs,r)) where
+    l = n `div` 2
+    r = n - l
+    (ys,zs) = splitAt l xs
 
 fromDistrib :: [(a,Integer)] -> Maybe (Odds a)
 fromDistrib [] = Nothing
-fromDistrib xs = Just (r xs) where
-  r [(x,_)] = Certainly x
-  r xs = let (xs,ys,xn,yn) = split' xs in Odds (r xs) (xn%yn) (r ys) where
-    split' []                     = ([],[],0,0)
-    split' [x@(_,xn)]             = ([x],[],xn,0)
-    split' (x@(_,xn):y@(_,yn):xs) = 
-      let (xxs,yys,xxn,yyn) = split' xs in (x:xxs,y:yys,xxn+xn,yyn+yn)
+fromDistrib xs = Just (unfoldOdds f (xs,length xs)) where
+  f ([(x,_)],_) = Left x
+  f (xs,n) = Right ((ys,l), tots ys % tots zs , (zs,r)) where
+    l = n `div` 2
+    r = n - l
+    (ys,zs) = splitAt l xs
+  tots = sum . map snd
+  
+toSorted :: Ord a => [a] -> Maybe (Odds a)
+toSorted [] = Nothing
+toSorted xs = Just (unfoldOdds f xs) where
+  f [x] = Left x
+  f (x:xs) = case partition (<x) xs of
+    ([],ys) -> Right ([x], 1 % fromIntegral (length ys),ys)
+    (xs,[]) -> Right (xs, fromIntegral (length xs), [x])
+    (xs,ys) -> Right (xs, fromIntegral (length xs) % fromIntegral (length ys + 1), x:ys)
 
 flatten :: Odds (Odds a) -> Odds a
 flatten = foldOdds Odds id
 
 instance Applicative Odds where
-  pure = Certainly
+  pure = Certain
   fs <*> xs = flatten (fmap (<$> xs) fs)
   
 instance Monad Odds where
   x >>= f = flatten (f <$> x)
   
+compress :: Ord a => Odds a -> Odds a
+compress xs = let Just ys = (fromDistrib . counts) xs in ys
