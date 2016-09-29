@@ -56,20 +56,5 @@ instance Ord Whole where
         cmp (compare x y <> ac) xs ys
       cmp _ [] _  = LT
       cmp _  _ [] = GT
-      
-instance Arbitrary Whole where
-  arbitrary = fmap fromInteger arbitrary
-
-instance Num Whole where
-  fromInteger n
-    | n < 0 = Whole Negative (fromPos (negate n))
-    | otherwise = Whole Positive (fromPos n)
-    where 
-      fromPos = map toDig . unfoldr qr
-      qr 0 = Nothing
-      qr n = Just (swap (quotRem n 10))
-      toDig = toEnum . fromInteger
-
-
 
 

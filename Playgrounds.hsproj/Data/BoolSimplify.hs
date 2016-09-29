@@ -38,9 +38,9 @@ instance Show a => Show (Expr a) where
   show = Print.showExpr (\s -> "(" ++ s ++ ")") $ \case
     Var x -> Print.Lit (show x)
     Lit b -> Print.Lit (show b)
-    Not x -> Print.Unary Print.L 10 "!" x
-    x :&: y -> Print.Binary Print.L 3 x " && " y
-    x :|: y -> Print.Binary Print.L 2 x " || " y
+    Not x -> Print.Unary (Print.Operator Print.L 10 "!") x
+    x :&: y -> Print.Binary (Print.Operator Print.L 3 " && ") x y
+    x :|: y -> Print.Binary (Print.Operator Print.L 2 " || ") x y
 
 instance Recursive (Expr a) where
   project = \case 
@@ -83,14 +83,17 @@ tryCombine xs ys | nd == 1 = Just (fmap (uncurry cm) md)
 
 matchUp :: Ord a => Set (Map a CombiningBool) -> Set (Map a CombiningBool)
 matchUp = converge r where
-  r xs = Set.fromList (foldr f [] xs) where
+  r = Set.fromList . foldr f [] where
     f x [] = [x]
     f x (y:ys) = case tryCombine x y of
       Nothing -> y : f x ys
       Just z -> z : ys
 
 primes :: Ord a => Expr a -> Set (Map a Bool)
-primes = Set.map (mapMaybe f) . matchUp . Set.map (fmap fromBool) . minTerms where
+primes = Set.map (mapMaybe f) 
+       . matchUp
+       . Set.map (fmap fromBool)
+       . minTerms where
   f T = Just True
   f F = Just False
   f D = Nothing

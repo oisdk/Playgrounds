@@ -1,5 +1,7 @@
 {-# LANGUAGE BangPatterns, PatternSynonyms, ViewPatterns, DeriveFunctor, DeriveFoldable #-}
 
+module Control.Monad.BinOdds where
+
 import Data.Ratio
 import Control.Arrow
 import Data.Foldable

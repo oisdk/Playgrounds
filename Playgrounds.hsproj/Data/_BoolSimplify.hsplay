@@ -6,14 +6,12 @@ let d = Var 'd'
 
 a :&: b :&: c
 
---
---
---simplify $ (Not a :|: b) :&: (a :|: b)
---
---a :&: (Not c :|: a) :&: b :&: Not c
---
---states [1,2]
---
---simplify (a :&: Not a)
---
---uniques [1,2,3,1,3]
+
+simplify $ (Not a :|: b) :&: (a :|: b)
+
+a :&: (Not c :|: a) :&: b :&: Not c
+
+states [1,2]
+
+simplify (a :|: Not a)
+

@@ -1,44 +1,64 @@
-{-# language DeriveFunctor, DeriveFoldable, DeriveTraversable #-}
+{-# language DeriveFunctor, DeriveFoldable, DeriveTraversable, ViewPatterns, PatternSynonyms #-}
 
 module Control.Monad.Prob where
   
 import Data.Ratio
 import Data.Monoid
+import Data.List
+import Control.Arrow
+import Data.Uniques
+import Data.Foldable
 
+pattern (:%) :: Integer -> Integer -> Rational
+pattern n :% d <- (numerator &&& denominator -> (n,d)) where
+  n :% d = n % d
+  
 data Odds a = Certainly a
-            | Or a Rational (Odds a)
+            | Odds a Rational (Odds a)
             deriving (Functor, Foldable, Traversable)
+
+            
+probHead :: Odds a -> Rational
+probHead (Certainly _) = 1
+probHead (Odds _ (n :% d) _) = n :% (n + d)
 
 foldOdds :: (a -> Rational -> b -> b) -> (a -> b) -> Odds a -> b
 foldOdds f b = r where
   r (Certainly x) = b x
-  r (Or x p xs) = f x p (r xs)
-  
-oddsOf :: (a -> Bool) -> Odds a -> Rational
-oddsOf p = foldOdds f b where
+  r (Odds x p xs) = f x p (r xs)
+
+probOfEvent :: Eq a => a -> Odds a -> Rational
+probOfEvent e = foldOdds f b where
+  b x = if e == x then 1 else 0
+  f x n r = (if e == x then n else r) / (n + 1)
+
+probOf :: (a -> Bool) -> Odds a -> Rational
+probOf p = foldOdds f b where
   b x = if p x then 1 else 0
   f x n r = (if p x then r + n else r) / (n + 1)
 
-equalOdds :: Foldable f => f a -> Odds a
-equalOdds xs = foldr f undefined xs (fromIntegral $ length xs - 1) where
-  f y a 0 = Certainly y
-  f y a n = Or y (1 % n) (a (n-1))
-
-instance Show a => Show (Odds a) where
-  show = ('[':) . foldOdds f (\x -> show x ++ "]") where
-    f x p xs = concat [show x, " (", n, ":", d, "), ", xs] where
-      n = show (numerator p)
-      d = show (denominator p)
-
-conc :: Rational -> Odds a -> Odds a -> Odds a
-conc p (Certainly  x) xs = Or x p xs
-conc p (Or x i xs) ys = Or x ip (conc op xs ys) where
-  ip = p * i / (p + i + 1)
-  op = p / (i + 1)
+equalOdds :: Foldable f => f a -> Maybe (Odds a)
+equalOdds xs = case length xs of
+  0 -> Nothing
+  n -> Just (foldr f undefined xs (fromIntegral (length xs - 1))) where
+    f y a 0 = Certainly y
+    f y a n = Odds y (1 % n) (a (n-1))
   
+fromDistrib :: [(a,Integer)] -> Odds a
+fromDistrib xs = f (tot*lst) xs where
+  (tot,lst) = foldl' (\(t,_) e -> (t+e,e)) (0,undefined) (map snd xs)
+  f _ [(x,_)] = Certainly x
+  f n ((x,p):xs) = let mp = p * lst
+                       np = n - mp in Odds x (mp % np) (f np xs)
+                       
+append :: Odds a -> Rational -> Odds a -> Odds a
+append = foldOdds f Odds where
+  f e r a p ys = Odds e ip (a op ys) where
+    ip = p * r / (p + r + 1)
+    op = p / (r + 1)
+
 flatten :: Odds (Odds a) -> Odds a
-flatten (Certainly xs) = xs
-flatten (Or x p xs) = conc p x (flatten xs)
+flatten = foldOdds append id
 
 instance Applicative Odds where
   pure = Certainly
@@ -46,3 +66,25 @@ instance Applicative Odds where
   
 instance Monad Odds where
   x >>= f = flatten (f <$> x)
+
+instance Show a => Show (Odds a) where
+  showsPrec _ = foldOdds f shows where
+    f x (n :% d) = flip (foldr (.))
+      [ shows x, showString " |", shows n, showChar ':', shows d, showString "| " ]
+
+compress :: Ord a => Odds a -> Odds a
+compress = fromDistrib . counts
+
+compressEq :: Eq a => Odds a -> Odds a
+compressEq = fromDistrib . countsEq
+
+toDistrib :: Odds a -> [(a,Integer)]
+toDistrib xs = [ (x,numerator (p * commonDenom)) | (x,p) <- nonNorm ] where
+  nonNorm = go xs
+  go (Certainly x) = [(x,1)]
+  go (Odds x (n :% d) xs) = (x, n % tsum) : [ (y, q * (d % tsum)) | (y,q) <- go xs ] where
+    tsum = n + d
+  commonDenom = fromInteger $ foldl' (\a (_,e) -> lcm a (denominator e)) 1 nonNorm
+
+commonDenom :: [Rational] -> Integer
+commonDenom = foldl' (\a e -> lcm a (denominator e)) 1

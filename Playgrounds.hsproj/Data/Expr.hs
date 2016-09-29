@@ -50,11 +50,13 @@ instance Show Expr where
   show = showExpr (\s -> "(" ++ s ++ ")") $ \case
     Zero -> Lit "0"
     Succ n -> case getNum n of
-      Nothing -> Binary L 4 1 " + " n
+      Nothing -> Binary (Operator L 4 " + ") 1 n
       Just x -> Lit (show (x+1))
-    Neg n -> Unary L 1 "-" n
-    Abs n -> Unary L 5 "abs " n
-    Sig n -> Unary L 5 "signum " n
-    x :+: y -> Binary L 4 x " + " y
-    x :-: y -> Binary L 5 x " - " y
-    x :*: y -> Binary L 6 x " * " y
+    Neg n -> Unary (Operator L 1 "-") n
+    Abs n -> Unary (Operator L 5 "abs ") n
+    Sig n -> Unary (Operator L 5 "signum ") n
+    x :+: y -> Binary (Operator L 4 " + ") x y
+    x :-: y -> Binary (Operator L 5 " - ") x y
+    x :*: y -> Binary (Operator L 6 " * ") x y
+    
+
