@@ -6,3 +6,4 @@ f (Just 2)
 let g = foldr (+) 1
 g Nothing
 g (Just 2)
+

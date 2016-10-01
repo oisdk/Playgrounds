@@ -1,6 +1,6 @@
 {-# language GADTs, KindSignatures, DataKinds, TypeOperators, RankNTypes, TypeFamilies #-}
 
-module Data.FuncChain where
+module Data.Function.Chain where
 
 data FuncChain a (fs :: [*]) b where
   Fn   :: (a -> b) -> FuncChain a '[] b

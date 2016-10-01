@@ -1,5 +1,4 @@
-module Data.Converge where
-  
+module Data.Function.Utils where
 
 converge :: Eq a => (a -> a) -> a -> a
 converge f = r where

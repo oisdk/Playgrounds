@@ -3,10 +3,11 @@
 module Text.Parse where
   
 import Data.Foldable
-import Prelude hiding (filter)
-import Data.List hiding (filter)
+import Data.Safe
+import Data.List
 import Data.Functor
 import Control.Applicative
+import Control.Applicative.Alternative
 
 newtype Parser a =
   Parser { parse :: String -> [(a, String)] 
@@ -24,20 +25,10 @@ instance Monad Parser where
   x >>= f = Parser $ \s -> [ (y,s) | (x,s) <- parse x s, (y,s) <- parse (f x) s ]
   
 anyChar :: Parser Char
-anyChar = Parser (maybeToList . uncons)
-  
-maybeToList :: Maybe a -> [a]
-maybeToList Nothing = []
-maybeToList (Just x) = [x]
-
-mapMaybe :: (a -> Maybe b) -> Parser a -> Parser b
-mapMaybe f p = Parser $ \s -> [ (x,s) | (Just x,s) <- parse (fmap f p) s ]
-
-filter :: (Alternative m, Monad m) => (a -> Bool) -> m a -> m a
-filter p = (=<<) (\x -> if p x then pure x else empty)
+anyChar = Parser (toAlt . uncons)
 
 satisfies :: (Char -> Bool) -> Parser Char
-satisfies p = filter p anyChar
+satisfies p = ensure p anyChar
 
 oneOf :: String -> Parser Char
 oneOf chrs = satisfies (`elem` chrs)
