@@ -25,6 +25,9 @@ instance Show a => Show (List a) where
 head :: List a -> Maybe a
 head xs = l xs Nothing (const . Just)
 
+fromList :: Foldable f => f a -> List a
+fromList = foldr (\x xs -> L (\_ f -> f x xs)) nil
+
 instance Foldable List where
   foldr f b = g where g (L xs) = xs b (\e a -> f e (g a))
   foldMap f = g where g (L xs) = xs mempty (\e a -> f e <> g a)
