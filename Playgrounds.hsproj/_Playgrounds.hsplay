@@ -1,6 +1,4 @@
 -- Haskell Playground 1.0
-let a = pure True :: Probability Bool
+let e = [SymT "x", SymT "d", SymT "d", Mult[Const (-1), SymT "x"], SymT "g", Mult[Const (-1), SymT "d"]]
 
-(&&) <$> a <*> pure False
-
-tell (1 % 2) $> True
+collectVars e

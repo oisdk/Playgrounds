@@ -11,7 +11,7 @@ module Data.Functor.Recursive where
 import Control.Arrow
 import Control.Monad
 
-data family Unfix (r :: *) :: * -> *
+type family Unfix (r :: *) :: * -> *
 
 class Functor (Unfix r) => Recursive r where
   project :: r -> Unfix r r
@@ -21,8 +21,6 @@ class Functor (Unfix r) => Recursive r where
   para alg = f where f = alg . fmap (\r -> (r, f r)) . project
   zygo :: (Unfix r a -> a) -> (Unfix r (a,b) -> b) -> r -> b
   zygo palg alg = snd . f where f = (palg . fmap fst &&& alg) . fmap f . project
-
-type family Fix (r :: * -> *) :: * where Fix (Unfix r) = r
 
 class Functor (Unfix r) => Corecursive r where
   embed :: Unfix r r -> r
@@ -54,9 +52,10 @@ zipo :: (Recursive g, Recursive h)
      -> c                                  -- ^ result
 zipo alg = cata zalg where zalg x = alg x . project
 
-
-data instance Unfix [a] r = 
+data ListF a r = 
   Nil | Cons a r deriving (Functor, Foldable, Traversable)
+  
+type instance Unfix [a] = ListF a
   
 instance Recursive [a] where
   project [] = Nil
@@ -67,3 +66,5 @@ zip' = zipo alg where
   alg Nil _ = []
   alg _ Nil = []
   alg (Cons x xs) (Cons y ys) = (x,y) : xs ys
+  
+newtype Fix f = Fix { unfix :: f (Fix f) }

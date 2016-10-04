@@ -4,14 +4,10 @@ let b = Var 'b'
 let c = Var 'c'
 let d = Var 'd'
 
-a :&: b :&: c
+let x = simplify (c :&: d :|: Not c :&: (Not d :&: a :|: d :&: b))
+let y = a :&: Not c :&: Not d :|: b :&: d :|: c :&: d
+let z = a :&: Not c :&: Not d :|: d :&: (b :|: c)
 
-
-simplify $ (Not a :|: b) :&: (a :|: b)
-
-a :&: (Not c :|: a) :&: b :&: Not c
-
-states [1,2]
-
-simplify (a :|: Not a)
-
+x
+y
+z

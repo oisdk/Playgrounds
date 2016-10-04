@@ -8,15 +8,16 @@ import qualified Data.Map as Map
 import qualified Data.Set as Set
 import Data.Set (Set)
 import Data.Map (Map, member, fromList, difference, size, union, elems, insert, lookup, intersectionWith, mapMaybe, filter, assocs, empty)
-import Data.Foldable hiding (foldr1)
+import Data.Foldable hiding (foldl1)
 import Data.List (subsequences)
 import Data.Maybe (fromMaybe)
 import Data.Safe
-import Prelude hiding (lookup, filter, foldr1)
+import Prelude hiding (lookup, filter, foldr1, foldl1)
 import Data.Function.Utils
 import Data.Function.Operators
 import Data.Uniques
 import qualified Text.ExprPrint as Print
+import Control.Lens
 
 infixl 3 :&:
 infixl 2 :|:
@@ -29,7 +30,7 @@ data Expr a = Var a
             | Expr a :|: Expr a
             deriving (Eq, Ord, Functor, Foldable, Traversable)
       
-data instance Unfix (Expr a) r 
+data ExprF a r 
   = V a
   | Tf
   | Ff
@@ -37,6 +38,8 @@ data instance Unfix (Expr a) r
   | r :& r
   | r :| r
   deriving (Eq, Ord, Show, Functor, Foldable, Traversable)
+
+type instance Unfix (Expr a) = ExprF a
 
 instance Show a => Show (Expr a) where
   show = Print.showExpr (\s -> "(" ++ s ++ ")") $ \case
@@ -55,6 +58,16 @@ instance Recursive (Expr a) where
     Not x -> N x
     x :&: y -> x :& y
     x :|: y -> x :| y
+    
+instance Corecursive (Expr a) where
+  embed = \case 
+    V n    -> Var n
+    Tf     -> Tr
+    Ff     -> Fa
+    N x    -> Not x
+    x :& y -> x :&: y
+    x :| y -> x :|: y
+  
   
 eval :: (a -> Bool) -> Expr a -> Bool
 eval f = cata $ \case
@@ -77,11 +90,20 @@ fromBool False = F
 states :: (Ord a, Foldable f) => f a -> [Map a Bool]
 states = foldlM f empty . uniques where
   f a e = [ insert e False a, insert e True a ]
+  
+equivalent :: Ord a => Expr a -> Expr a -> Bool
+equivalent x y = all (uncurry (==)) [ (evalState x s, evalState y s) | s <- allStates ] where
+  allStates = states (Set.union (fromFoldable x) (fromFoldable y))
+  evalState e s = eval (`sureLookup` s) e
+  fromFoldable = foldr Set.insert Set.empty
 
 minTerms :: Ord a => Expr a -> Set (Map a Bool)
 minTerms e = Set.fromList [ s | s <- states e, eval (`sureLookup` s) e ]
 
-tryCombine :: Ord a => Map a CombiningBool -> Map a CombiningBool -> Maybe (Map a CombiningBool)
+tryCombine :: Ord a
+           => Map a CombiningBool
+           -> Map a CombiningBool
+           -> Maybe (Map a CombiningBool)
 tryCombine xs ys
   | nd == 1 = Just (fmap (uncurry cm) md)
   | otherwise = Nothing where
@@ -108,13 +130,20 @@ primes = minTerms
 toExpr :: Set (Map a Bool) -> Expr a
 toExpr = Set.elems
      >>> map fromMinTerm
-     >>> foldr1 (:|:)
+     >>> foldl1 (:|:)
      >>> fromMaybe Fa
      where
   fromMinTerm = assocs
             >>> (map.uncurry) (bool <*> Not <<< Var)
-            >>> foldr1 (:&:)
+            >>> foldl1 (:&:)
             >>> fromMaybe Tr
 
 simplify :: Ord a => Expr a -> Expr a
 simplify = toExpr . primes
+
+instance Plated (Expr a) where
+  plate f e = embed <$> traverse f (project e)
+  
+
+
+

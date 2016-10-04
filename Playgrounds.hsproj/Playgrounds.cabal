@@ -17,8 +17,9 @@ Executable Playgrounds
       transformers -any,
       text -any,
       base -any,
-      mmorph -any,
-      containers -any
+      lens -any,
+      containers -any,
+      mmorph -any
   other-modules:
       Text.ExprPrint
       Text.Parse
@@ -31,10 +32,13 @@ Executable Playgrounds
       Data.Church.Maybe
       Data.Church.Pair
       Data.Church.Parser
+      Data.FancyExpr
       Data.NonEmpty
+      Data.Traversable.Extras
       Data.Safe
       Data.Functor.Recursive
       Data.BoolSimplify
+      Data.PList
       Data.Function.Chain
       Data.Function.Operators
       Data.Function.Utils

@@ -32,6 +32,7 @@ module Control.Monad.ListT
   take,
   drop,
   slice,
+  filterM
 )
 where
 
@@ -44,7 +45,7 @@ import Control.Monad.Trans.Reader
 import Control.Monad.Trans.Maybe
 import Control.Monad.Trans.Control hiding (embed, embed_)
 import Control.Monad.Base
-import Control.Monad
+import Control.Monad hiding (filterM)
 import Control.Applicative
 import Data.Monoid
 import Control.Arrow
@@ -255,6 +256,12 @@ repeat =
 
 -- * Transformation
 -------------------------
+
+filterM :: Monad m => (a -> m Bool) -> ListT m a -> ListT m a
+filterM p s = 
+  lift (uncons s) >>=
+  mapM (\(h,t) -> lift (p h) >>= \h' -> if h' then cons h (filterM p t) else filterM p t) >>=
+  maybe mzero return
 
 -- |
 -- A transformation,

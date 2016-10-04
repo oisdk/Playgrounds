@@ -1,9 +1,2 @@
 -- Haskell Playground 1.0
-let f = maybe 1 succ
-f Nothing
-f (Just 2)
-
-let g = foldr (+) 1
-g Nothing
-g (Just 2)
-
+ordNub [1..]
