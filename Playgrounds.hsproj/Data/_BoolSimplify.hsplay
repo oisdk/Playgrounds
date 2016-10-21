@@ -6,6 +6,7 @@ let d = Var 'd'
 
 let x = simplify (c :&: d :|: Not c :&: (Not d :&: a :|: d :&: b))
 let y = a :&: Not c :&: Not d :|: b :&: d :|: c :&: d
+
 let z = a :&: Not c :&: Not d :|: d :&: (b :|: c)
 
 x

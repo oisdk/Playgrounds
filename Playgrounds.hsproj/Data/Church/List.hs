@@ -1,8 +1,10 @@
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 
 module Data.Church.List where
 
-import Prelude hiding ((++), concat, zip, zipWith, tail)
+import Data.Church.Prelude
+import Data.Church.Pair
 
 newtype List a = L { l :: forall b. (a -> b -> b) -> b -> b }
 
@@ -19,12 +21,8 @@ fromList xs = L (\f b -> foldr f b xs)
 instance Show a => Show (List a) where
   show = show . foldr (:) []
 
-infixr 5 ++
-(++) :: List a -> List a -> List a
-(++) xs ys = L (\f b -> l xs f (l ys f b))
-
 concat :: List (List a) -> List a
-concat xs = l xs (++) nil
+concat xs = l xs (<>) nil
 
 instance Functor List where
   fmap f xs = L $ \g b -> l xs (g.f) b
@@ -44,14 +42,16 @@ instance Traversable List where
     g e a = (<:) <$> f e <*> a
     
 head :: List a -> Maybe a
-head xs = l xs (\e _ -> Just e) Nothing
+head xs = l xs (\e _ -> just e) nothing
 
 tail :: List a -> List a
 tail xs = L (\c n -> l xs (\h t g -> g h (t c)) (\_ -> n) (\_ x -> x))
 
+instance SemiGroup (List a) where
+  xs <> ys = L (\f b -> l xs f (l ys f b))
+
 instance Monoid (List a) where
   mempty = nil
-  mappend = (++)
   
 newtype Zip a b = Zip { unZip :: forall w. (a -> b -> w) -> w -> w }
 
@@ -67,5 +67,5 @@ l2 (L xs) ys c b = xs f (const b) ys where
 zipWith :: (a -> b -> c) -> List a -> List b -> List c
 zipWith f xs ys = l2 xs ys (\x y a -> f x y <: a) nil
 
-zip :: List a -> List b -> List (a,b)
-zip = zipWith (,)
+zip :: List a -> List b -> List (Pair a b)
+zip = zipWith pair

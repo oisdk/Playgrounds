@@ -16,3 +16,7 @@ ordNub :: (Monad m, Traversable m, Alternative m, Ord a)
        => m a -> m a
 ordNub = flip evalState Set.empty
        . filterM (\e -> gets (Set.notMember e) <* modify' (Set.insert e))
+
+ordNubOn :: (Ord b, Traversable f, Monad f, Alternative f) => (a -> b) -> f a -> f a
+ordNubOn k = flip evalState Set.empty
+       . filterM (\e -> let m = k e in gets (Set.notMember m) <* modify' (Set.insert m))

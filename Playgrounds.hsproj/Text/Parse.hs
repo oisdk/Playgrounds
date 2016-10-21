@@ -25,10 +25,10 @@ instance Monad Parser where
   x >>= f = Parser $ \s -> [ (y,s) | (x,s) <- parse x s, (y,s) <- parse (f x) s ]
   
 anyChar :: Parser Char
-anyChar = Parser (toAlt . uncons)
+anyChar = Parser (choice . uncons)
 
 satisfies :: (Char -> Bool) -> Parser Char
-satisfies p = ensure p anyChar
+satisfies p = filterA p anyChar
 
 oneOf :: String -> Parser Char
 oneOf chrs = satisfies (`elem` chrs)
@@ -51,6 +51,7 @@ digit = flip mapMaybe anyChar $ \case
   _ -> Nothing
   
 natural :: Parser Int
+
 natural = foldl' (\a e -> e + a * 10) 0 <$> many digit
 
 chainl1 :: (Monad m, Alternative m) => m a -> m (a -> a -> a) -> m a
@@ -60,6 +61,27 @@ chainl1 p op = rest =<< p where
     y <- p
     rest (f x y)) <|> return x
                                 
+token :: Parser a -> Parser a
+token p = p <* wspace
 
+reserved :: String -> Parser ()
+reserved v = token . Parser $ \s -> if v `isPrefixOf` s then [((),drop (length v) s)] else []
 
+data Instruction
+  = MovToM Reg AddrReg
+  | MovFrM AddrReg Reg
+  | Add Reg Reg
+  deriving Show
+  
+data Reg = AL | BL deriving Show
 
+newtype AddrReg = AddrReg { getReg :: Reg } deriving Show
+
+reg :: Parser Reg
+reg = AL <$ reserved "AL" <|> BL <$ reserved "BL"
+
+addrReg :: Parser AddrReg
+addrReg = AddrReg <$> (reserved "[" *> reg <* reserved "]")
+
+instruction :: Parser Instruction
+instruction = reserved "MOV" *> 

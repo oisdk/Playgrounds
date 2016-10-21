@@ -1,0 +1,2 @@
+-- Haskell Playground 1.0
+putStr $ (showTable 3 2 5 (map show [1,2,3,4,5]) [("a",[1,2,3,4,5])]) ""

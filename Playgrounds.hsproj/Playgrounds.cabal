@@ -13,37 +13,42 @@ Executable Playgrounds
   build-depends:
       transformers-base -any,
       mtl -any,
+      text -any,
       monad-control -any,
       transformers -any,
-      text -any,
       base -any,
       lens -any,
       containers -any,
-      mmorph -any
+      mmorph -any,
+      array -any
   other-modules:
       Text.ExprPrint
+      Text.Pad
       Text.Parse
       Data.Uniques
       Data.Bool
       Data.BoolQuery
       Data.Church.List
-      Data.Church.Bool
       Data.Church.Nat
-      Data.Church.Maybe
       Data.Church.Pair
-      Data.Church.Parser
+      Data.Church.Prelude
       Data.FancyExpr
       Data.NonEmpty
+      Data.ST
       Data.Traversable.Extras
+      Data.Deque
       Data.Safe
       Data.Functor.Recursive
       Data.BoolSimplify
+      Data.Unfold
       Data.PList
+      Data.FoldTricks
       Data.Function.Chain
       Data.Function.Operators
       Data.Function.Utils
-      Data.RList
       Data.Foldable.Multi
+      Data.HS2048
+      Data.RList
       Data.Expr
       Data.Scott.List
       Control.Applicative.Alternative
@@ -58,3 +63,6 @@ Executable Playgrounds
       Control.Monad.Source
       Control.Monad.Split
       Control.Monad.ListT
+      HS99.HS1_10
+      Numeric.Decimal
+      Numeric.Bases

@@ -1,4 +1,2 @@
 -- Haskell Playground 1.0
-let e = [SymT "x", SymT "d", SymT "d", Mult[Const (-1), SymT "x"], SymT "g", Mult[Const (-1), SymT "d"]]
-
-collectVars e
+sort [1,4,2,4,3,1,6,54,2,3,4,5]

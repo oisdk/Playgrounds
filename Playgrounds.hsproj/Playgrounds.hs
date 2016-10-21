@@ -1,26 +1,30 @@
-import Data.List
+first :: (a -> c) -> (a,b) -> (c,b)
+first f ~(x,y) = (f x,y)
 
-data Expr = Const Integer
-          | SymT String
-          | Mult [Expr]
-          | Add  [Expr]
-          deriving (Show, Eq, Ord)
-          
-withoutConst :: Expr -> Expr
-withoutConst e = case e of
-  Mult xs -> compress Mult xs
-  Add  xs -> compress Add  xs
-  x       -> x
+second :: (b -> c) -> (a,b) -> (a,c)
+second f ~(x,y) = (x,f y)
 
-compress :: ([Expr] -> Expr) -> [Expr] -> Expr
-compress op xs = case ys of
-  []  -> Const (-1)
-  [x] -> x
-  xs  -> op xs
-  where ys = [ withoutConst y
-             | y <- xs
-             , y /= Const (-1) ]
+splitEven :: [a] -> ([a],[a])
+splitEven xs = foldr f (const ([],[])) xs True where
+  f e a b = (if b then first else second) (e:) (a (not b))
+  
+sort :: Ord a => [a] -> [a]
+--sort [] = []
+--sort [x] = [x]
+--sort xs = let (ys,zs) = splitEven xs in merge (sort ys) (sort zs)
+sort xs = sort' (length xs) xs where
+  sort' n xs
+    | n <= 1 = xs
+    | otherwise = merge (sort' m ys) (sort' (n-m) zs)
+    where
+      ys = take m xs
+      zs = drop m xs
+      m = n `div` 2
 
-collectVars :: [Expr] -> [Expr]
-collectVars = sortOn withoutConst
-
+merge :: Ord a => [a] -> [a] -> [a]
+merge [] ys = ys
+merge xs [] = xs
+merge (x:xs) (y:ys) = case compare x y of
+  LT -> x : merge xs (y:ys)
+  EQ -> x : y : merge xs ys
+  GT -> y : merge (x:xs) ys

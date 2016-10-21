@@ -3,6 +3,7 @@ module Data.Safe where
 import Prelude hiding (head, last, foldl1, foldr1)
 import Data.Foldable hiding (head, last, minimumBy, maximumBy, minimum, maximum, foldl1, foldr1)
 import Data.List hiding (head, last, minimumBy, maximumBy, minimum, maximum, foldl1, foldr1)
+import Data.Function.Operators
 
 head :: Foldable f => f a -> Maybe a
 head = foldr (const . Just) Nothing
@@ -33,18 +34,32 @@ init (x:xs) = Just (init' x xs)
         
 minimumBy :: Foldable f => (a -> a -> Ordering) -> f a -> Maybe a
 minimumBy cmp = foldl1 $ \a e -> case cmp a e of
-  LT -> a
-  EQ -> a
   GT -> e
+  _  -> a
   
 maximumBy :: Foldable f => (a -> a -> Ordering) -> f a -> Maybe a
 maximumBy cmp = foldl1 $ \a e -> case cmp a e of
   LT -> e
-  EQ -> a
-  GT -> a
-  
+  _  -> a
+
 minimum :: (Ord a, Foldable f) => f a -> Maybe a
 minimum = minimumBy compare
 
 maximum :: (Ord a, Foldable f) => f a -> Maybe a
 maximum = maximumBy compare
+
+minimumOn :: (Ord b, Foldable f) => (a -> b) -> f a -> Maybe a
+minimumOn ord = fmap fst . foldl' f Nothing where
+  f Nothing e = Just (e, ord e)
+  f (Just (a,o)) e = Just $ case compare o k of
+    GT -> (e,k)
+    _  -> (a,o)
+    where k = ord e
+    
+maximumOn :: (Ord b, Foldable f) => (a -> b) -> f a -> Maybe a
+maximumOn ord = fmap fst . foldl' f Nothing where
+  f Nothing e = Just (e, ord e)
+  f (Just (a,o)) e = Just $ case compare o k of
+    LT -> (e,k)
+    _  -> (a,o)
+    where k = ord e

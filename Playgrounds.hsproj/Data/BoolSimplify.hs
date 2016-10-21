@@ -7,7 +7,7 @@ import Data.Bool
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import Data.Set (Set)
-import Data.Map (Map, member, fromList, difference, size, union, elems, insert, lookup, intersectionWith, mapMaybe, filter, assocs, empty)
+import Data.Map (Map, member, fromList, difference, size, union, elems, insert, lookup, intersectionWith, mapMaybe, filter, assocs)
 import Data.Foldable hiding (foldl1)
 import Data.List (subsequences)
 import Data.Maybe (fromMaybe)
@@ -18,6 +18,8 @@ import Data.Function.Operators
 import Data.Uniques
 import qualified Text.ExprPrint as Print
 import Control.Lens
+import Data.Traversable.Extras
+import Control.Applicative
 
 infixl 3 :&:
 infixl 2 :|:
@@ -29,6 +31,22 @@ data Expr a = Var a
             | Expr a :&: Expr a
             | Expr a :|: Expr a
             deriving (Eq, Ord, Functor, Foldable, Traversable)
+  
+flatten :: Expr (Expr a) -> Expr a
+flatten = cata $ \case
+  V x    -> x
+  Tf     -> Tr
+  Ff     -> Fa
+  N x    -> Not x
+  x :& y -> x :&: y
+  x :| y -> x :|: y
+          
+instance Applicative Expr where
+  pure = Var
+  fs <*> xs = flatten (fmap (<$> xs) fs)
+  
+instance Monad Expr where
+  x >>= f = flatten (fmap f x)
       
 data ExprF a r 
   = V a
@@ -68,6 +86,11 @@ instance Corecursive (Expr a) where
     x :& y -> x :&: y
     x :| y -> x :|: y
   
+
+instance Alternative Expr where
+  empty = Fa
+  (<|>) = (:|:)
+
   
 eval :: (a -> Bool) -> Expr a -> Bool
 eval f = cata $ \case
@@ -87,9 +110,9 @@ fromBool :: Bool -> CombiningBool
 fromBool True  = T
 fromBool False = F
 
-states :: (Ord a, Foldable f) => f a -> [Map a Bool]
-states = foldlM f empty . uniques where
-  f a e = [ insert e False a, insert e True a ]
+states :: Ord a => Expr a -> Expr (Map a Bool)
+states = foldlM f mempty . ordNub where
+  f a e = pure (insert e False a) :|: pure (insert e True a)
   
 equivalent :: Ord a => Expr a -> Expr a -> Bool
 equivalent x y = all (uncurry (==)) [ (evalState x s, evalState y s) | s <- allStates ] where
