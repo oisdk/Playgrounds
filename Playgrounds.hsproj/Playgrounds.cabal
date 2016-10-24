@@ -13,18 +13,15 @@ Executable Playgrounds
   build-depends:
       transformers-base -any,
       mtl -any,
-      text -any,
       monad-control -any,
       transformers -any,
       base -any,
-      lens -any,
       containers -any,
-      mmorph -any,
-      array -any
+      lens -any,
+      array -any,
+      mmorph -any
   other-modules:
-      Text.ExprPrint
-      Text.Pad
-      Text.Parse
+      Assignments.HS2
       Data.Uniques
       Data.Bool
       Data.BoolQuery
@@ -51,6 +48,9 @@ Executable Playgrounds
       Data.RList
       Data.Expr
       Data.Scott.List
+      Text.ExprPrint
+      Text.Pad
+      Text.Parse
       Control.Applicative.Alternative
       Control.Monad.BinOdds
       Control.Monad.Church.State
