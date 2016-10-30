@@ -1,2 +1,3 @@
 -- Haskell Playground 1.0
-quickCheck sameOrder
+quickCheck insertIsMember
+quickCheck orderDoesntMatter

@@ -16,11 +16,11 @@ Executable Playgrounds
       monad-control -any,
       transformers -any,
       base -any,
-      lens -any,
       containers -any,
       mmorph -any,
-      QuickCheck -any,
-      array -any
+      lens -any,
+      array -any,
+      QuickCheck -any
   other-modules:
       Assignments.HS2
       Data.Uniques
@@ -67,5 +67,6 @@ Executable Playgrounds
       Control.Monad.Split
       Control.Monad.ListT
       HS99.HS1_10
-      Numeric.Decimal
+      Numeric.Countdown
       Numeric.Bases
+      Numeric.Decimal
