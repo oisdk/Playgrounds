@@ -83,5 +83,3 @@ reg = AL <$ reserved "AL" <|> BL <$ reserved "BL"
 addrReg :: Parser AddrReg
 addrReg = AddrReg <$> (reserved "[" *> reg <* reserved "]")
 
-instruction :: Parser Instruction
-instruction = reserved "MOV" *> 

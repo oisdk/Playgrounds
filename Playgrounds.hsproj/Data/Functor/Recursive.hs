@@ -9,11 +9,16 @@
 module Data.Functor.Recursive where
 
 import Control.Arrow
+import Data.Coerce
 import Control.Monad
 
 type family Unfix (r :: *) :: * -> *
 
+newtype Fix f = Fix { unFix :: f (Fix f) }
+type instance Unfix (Fix f) = f
+
 class Functor (Unfix r) => Recursive r where
+  {-# MINIMAL project #-}
   project :: r -> Unfix r r
   cata :: (Unfix r a -> a) -> r -> a
   cata alg = f where f = alg . fmap f . project
@@ -23,9 +28,16 @@ class Functor (Unfix r) => Recursive r where
   zygo palg alg = snd . f where f = (palg . fmap fst &&& alg) . fmap f . project
 
 class Functor (Unfix r) => Corecursive r where
+  {-# MINIMAL embed #-}
   embed :: Unfix r r -> r
   ana :: (a -> Unfix r a) -> a -> r
   ana alg = f where f = embed . fmap f . alg
+
+instance Functor f => Recursive (Fix f) where
+  project = coerce
+  
+instance Functor f => Corecursive (Fix f) where
+  embed = coerce
 
 -- | A monadic catamorphism.
 cataM
@@ -66,5 +78,4 @@ zip' = zipo alg where
   alg Nil _ = []
   alg _ Nil = []
   alg (Cons x xs) (Cons y ys) = (x,y) : xs ys
-  
-newtype Fix f = Fix { unfix :: f (Fix f) }
+ 

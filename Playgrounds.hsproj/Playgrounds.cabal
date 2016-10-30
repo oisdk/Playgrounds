@@ -16,10 +16,11 @@ Executable Playgrounds
       monad-control -any,
       transformers -any,
       base -any,
-      containers -any,
       lens -any,
-      array -any,
-      mmorph -any
+      containers -any,
+      mmorph -any,
+      QuickCheck -any,
+      array -any
   other-modules:
       Assignments.HS2
       Data.Uniques
@@ -52,7 +53,9 @@ Executable Playgrounds
       Text.Pad
       Text.Parse
       Control.Applicative.Alternative
+      Control.Applicative.Janus
       Control.Monad.BinOdds
+      Control.Monad.Church.Source
       Control.Monad.Church.State
       Control.Monad.Church.Writer
       Control.Monad.Undo
