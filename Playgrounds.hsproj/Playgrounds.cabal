@@ -32,10 +32,11 @@ Executable Playgrounds
       Data.Church.Prelude
       Data.FancyExpr
       Data.NonEmpty
+      Data.Para
       Data.ST
-      Data.Traversable.Extras
       Data.Deque
       Data.Safe
+      Data.Traversable.Extras
       Data.Functor.Recursive
       Data.BoolSimplify
       Data.Unfold
@@ -49,6 +50,7 @@ Executable Playgrounds
       Data.RList
       Data.Expr
       Data.Scott.List
+      Data.Ring
       Text.ExprPrint
       Text.Pad
       Text.Parse
