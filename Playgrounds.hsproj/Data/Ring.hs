@@ -1,20 +1,38 @@
 {-# language DeriveFunctor, DeriveFoldable, DeriveTraversable #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Data.Ring
   ( module P
   , Semiring(..)
-  , Add(..)
-  , Mul(..)
+  , plusAssoc
+  , mulAssoc
+  , plusComm
+  , mulDistribL
+  , mulDistribR
+  , plusId
+  , mulId
   ) where
   
 import Prelude as P hiding ((+), (*))
 import qualified Prelude as P
 import Data.Coerce
+import Data.Ord
+import Test.QuickCheck
+import Control.Monad
+import Data.Monoid
+import Data.List
+import Control.Arrow
+import Control.Applicative
+import Data.Set (Set)
+import qualified Data.Set as Set
 
 class Semiring a where
   one :: a
   zero :: a
+  infixl 6 +
   (+) :: a -> a -> a
+  infixl 7 *
   (*) :: a -> a -> a
   
 instance Semiring Int where
@@ -46,58 +64,67 @@ instance Semiring Bool where
   zero = False
   (+) = (||)
   (*) = (&&)
+
+instance Semiring a => Semiring (b -> a) where
+  one = const one
+  zero = const zero
+  (f + g) x = f x + g x
+  (f * g) x = f x * g x
+
+plusAssoc :: (Eq a, Semiring a) => a -> a -> a -> Bool
+plusAssoc x y z = lp == rp where
+  l = x + y
+  r = y + z
+  lp = l + z
+  rp = x + r
   
-newtype Add a = Add { getAdd :: a } deriving (Traversable, Eq, Ord, Show, Bounded)
-newtype Mul a = Mul { getMul :: a } deriving (Traversable, Eq, Ord, Show, Bounded)
+mulAssoc :: (Eq a, Semiring a) => a -> a -> a -> Bool
+mulAssoc x y z = lp == rp where
+  l = x * y
+  r = y * z
+  lp = l * z
+  rp = x * r
 
-instance Functor Add where fmap = coerce
+plusComm :: (Eq a, Semiring a) => a -> a -> Bool
+plusComm x y = x + y == y + x
 
-instance Functor Mul where fmap = coerce
+mulDistribL :: (Eq a, Semiring a) => a -> a -> a -> Bool
+mulDistribL x y z = x * (y + z) == x * y + x * z
 
-instance Foldable Add where
-  foldr   = (coerce :: ((a -> b -> c) -> (b -> a -> c)) -> (a -> b -> c) -> (b -> Add a -> c)) flip
-  foldl   = coerce
-  foldMap = coerce
-  length  = const 1
+mulDistribR :: (Eq a, Semiring a) => a -> a -> a -> Bool
+mulDistribR x y z = (x + y) * z == x * z + y * z
 
-instance Foldable Mul where
-  foldr   = (coerce :: ((a -> b -> c) -> (b -> a -> c)) -> (a -> b -> c) -> (b -> Mul a -> c)) flip
-  foldl   = coerce
-  foldMap = coerce
-  length  = const 1
+plusId :: (Eq a, Semiring a) => a -> Bool
+plusId x = x + zero == x && zero + x == x
 
-instance Applicative Add where
-  pure = coerce
-  (<*>) = (coerce :: ((a -> b) -> a -> b) -> (Add (a -> b) -> Add a -> Add b)) ($)
+mulId :: (Eq a, Semiring a) => a -> Bool
+mulId x = x * one == x && one * x == x
 
-instance Applicative Mul where
-  pure = coerce
-  (<*>) = (coerce :: ((a -> b) -> a -> b) -> (Mul (a -> b) -> Mul a -> Mul b)) ($)
+type OneTest a = a -> Bool
+type TwoTest a = a -> a -> Bool
+type ThreeTest a = a -> a -> a -> Bool
 
-instance Monad Add where
-  (>>=) = flip coerce
-
-instance Monad Mul where
-  (>>=) = flip coerce
+instance Monoid a => Semiring (ZipList a) where
+  ZipList xs * ZipList ys = ZipList (xs ++ ys)
+  (+) = liftA2 mappend
+  zero = ZipList (repeat mempty)
+  one = ZipList []
   
-instance Semiring a => Monoid (Add a) where
-  mempty = Add zero
-  mappend = (coerce :: (a -> a -> a) -> (Add a -> Add a -> Add a)) (+)
+instance Arbitrary a => Arbitrary (ZipList a) where
+  arbitrary = ZipList <$> arbitrary
 
-instance Semiring a => Monoid (Mul a) where
-  mempty = Mul one
-  mappend = (coerce :: (a -> a -> a) -> (Mul a -> Mul a -> Mul a)) (*)
+instance Arbitrary a => Arbitrary (Sum a) where
+  arbitrary = Sum <$> arbitrary
 
-instance Semiring a => Semiring (Add a) where
-  zero = Add zero
-  one = Add one
-  (+) = (coerce :: (a -> a -> a) -> (Add a -> Add a -> Add a)) (+)
-  (*) = (coerce :: (a -> a -> a) -> (Add a -> Add a -> Add a)) (*)
+cartProd :: (Ord a, Monoid a) => Set a -> Set a -> Set a
+cartProd xs ys = Set.foldr (\x -> flip (Set.foldr (Set.insert . mappend x)) ys) Set.empty xs
 
-instance Semiring a => Semiring (Mul a) where
-  zero = Mul zero
-  one = Mul one
-  (+) = (coerce :: (a -> a -> a) -> (Mul a -> Mul a -> Mul a)) (+)
-  (*) = (coerce :: (a -> a -> a) -> (Mul a -> Mul a -> Mul a)) (*)
-
+instance (Ord a, Monoid a) => Semiring (Set a) where
+  (*) = cartProd
+  (+) = Set.union
+  zero = Set.empty
+  one = Set.singleton mempty
+  
+instance (Ord a, Arbitrary a) => Arbitrary (Set a) where
+  arbitrary = Set.fromList <$> arbitrary
 

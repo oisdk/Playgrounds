@@ -1,1 +1,2 @@
 -- Haskell Playground 1.0
+liftA2F (,) [1,2] [3,4]

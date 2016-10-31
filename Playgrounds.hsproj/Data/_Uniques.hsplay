@@ -1,1 +1,5 @@
 -- Haskell Playground 1.0
+let x = fromList [Sum 1, Sum 2]
+let y = fromList [Sum 3, Sum 4]
+
+cartProd x y

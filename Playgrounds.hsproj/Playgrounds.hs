@@ -1,15 +1,15 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# Language LambdaCase #-}
-{-# language NoImplicitPrelude #-}
 
 import Data.Map.Strict (Map, alter, fromList, singleton)
 import Test.QuickCheck
 import qualified Data.Map.Strict as Map
 import Data.List (stripPrefix, uncons)
-import Data.Ring hiding (lookup)
+import Data.Semiring
 import Data.Maybe
 import Data.Foldable
 import Control.Monad
+import Prelude hiding (lookup)
 
 data SplitResult a = SplitResult
   { common :: [a]
@@ -27,15 +27,21 @@ followSplit xs ys = SplitResult [] xs ys
 
 data Trie a b = Trie
   { endsHere :: b
-  , children :: Map a (TrieEnd a b)
+  , prefixSt :: [a]
+  , children :: Map a (Trie a b)
   } deriving (Show, Eq)
       
 data TrieEnd a b = TrieEnd { string :: [a], child :: Trie a b } deriving (Show, Eq)
 
 lookup :: (Ord a, Semiring b) => [a] -> Trie a b -> b
+lookup xs (Trie e p m) = case stripPrefix p xs of
+  Nothing -> zero
+  Just [] -> e
+  Just (y:ys) -> getSum $ foldMap (Sum . lookup ys) (Map.lookup y m)
+  
 lookup [] = endsHere
-lookup (x:xs) = getAdd . foldMap f . Map.lookup x . children where
-  f (TrieEnd ys t) = foldMap (Add . flip lookup t) (stripPrefix (toList ys) xs)
+lookup (x:xs) = maybe zero f . Map.lookup x . children where
+  f (TrieEnd ys t) = maybe zero (flip lookup t) (stripPrefix (toList ys) xs)
 
 emptyT :: Semiring b => Trie a b
 emptyT = Trie zero Map.empty
@@ -61,3 +67,6 @@ orderDoesntMatter xs = fromListT xs == fromListT (reverse xs)
 
 instance (Arbitrary a, Ord a, Arbitrary b, Semiring b) => Arbitrary (Trie a b) where
   arbitrary = fromListT <$> arbitrary
+  
+
+

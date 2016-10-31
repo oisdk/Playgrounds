@@ -1,53 +1,54 @@
-{-# LANGUAGE DeriveFunctor, FlexibleContexts #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Control.Applicative.Janus where
 
-import Control.Arrow
-import Data.Functor
-import Data.Monoid
-import Control.Monad.State
 import Control.Applicative
-import Data.List
+import Control.Monad
+import Control.Monad.State
+import Data.Functor
+import Control.Arrow
 import Control.Lens (itraverse)
 
-data Janus f a = Janus
-  { forwards  :: f a
-  , backwards :: f a 
-  } deriving (Functor,Show)
+data Janus f a where
+  Pure :: a -> Janus f a
+  Lift :: f a -> Janus f a
+  App  :: Janus f (a -> b) -> Janus f a -> Janus f b
+  Then :: Janus f a -> Janus f b -> Janus f b
+  Map  :: (a -> b) -> Janus f a -> Janus f b
   
-instance Applicative f => Applicative (Janus f) where
-  pure x = Janus (pure x) (pure x)
-  Janus ff fb <*> Janus xf xb = Janus (ff <*> xf) (xb <**> fb)
+instance Functor (Janus f) where
+  fmap = Map
+  
+instance Applicative (Janus f) where
+  pure = Pure
+  (<*>) = App
+  (*>) = Then
+  (<*) = flip Then
   
 run :: Alternative f => Janus f a -> f a
-run (Janus f b) = f <|> b
-
-both :: f a -> Janus f a
-both x = Janus x x
+run (Pure x) = pure x
+run (Lift x) = x
+run (App fs xs) =
+  let f = run fs
+      x = run xs
+   in f <*> x <|> x <**> f
+run (Then xs ys) =
+  let x = run xs
+      y = run ys
+  in (x *> y) <|> (y <* x)
+run (Map f xs) = fmap f (run xs)
 
 data Ins = Jump String
          | Label String
          | Pass
          deriving Show
 
-newtype Parser a b = Parser { runParse :: Int -> [a] -> Maybe (Int,[a],b)} deriving Functor
+f :: Int -> Ins -> Janus (StateT [(String,Int)] Maybe) Int
+f i Pass = Lift (lift (Just (-1)))
+f i (Label s) = Lift (modify ((s,i):) ) *> Lift (lift (Just (-1)))
+f i (Jump s) = Lift (lift =<< gets (lookup s))
 
-instance Applicative (Parser a) where
-  pure x = Parser $ \p xs -> Just (p,xs,x)
-  fs <*> xs = Parser $ \p s -> do
-    (p,s,f) <- runParse fs p s
-    (p,s,x) <- runParse xs p s
-    pure (p, s, f x)
-
-
-
-parse :: [Ins] -> [Maybe Int]
-parse = uncurry (zipWith (<|>)) . (forwards &&& backwards) . evalIn . itraverse f
-
-evalIn (Janus xs ys) = Janus (evalState xs []) (evalState ys [])
-
-f :: Int -> Ins -> Janus (State [(String,Int)]) (Maybe Int)
-f i Pass = pure Nothing
-f i (Label s) = both (modify ((s,i):) ) $> Nothing
-f i (Jump s) = both (gets (lookup s))
+parse :: [Ins] -> Maybe [Int]
+parse xs = evalStateT (run (itraverse f xs)) []
 

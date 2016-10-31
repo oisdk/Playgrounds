@@ -15,14 +15,17 @@ Executable Playgrounds
       mtl -any,
       monad-control -any,
       transformers -any,
+      semigroups -any,
       base -any,
       containers -any,
-      mmorph -any,
-      lens -any,
+      QuickCheck -any,
       array -any,
-      QuickCheck -any
+      mmorph -any,
+      lens -any
   other-modules:
       Assignments.HS2
+      Assignments.HS3
+      Data.Semiring
       Data.Uniques
       Data.Bool
       Data.BoolQuery
