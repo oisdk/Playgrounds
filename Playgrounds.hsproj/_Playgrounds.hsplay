@@ -1,15 +1,12 @@
 -- Haskell Playground 1.0
---let l = cycle [One,Two,Three]
---let x = take 1000000 l
---maxSlow x
---maxFast x
+--quickCheck (plusAssoc   :: [Int] -> [Int] -> [Int] -> Property)
+--quickCheck (mulAssoc    :: [Int] -> [Int] -> [Int] -> Property)
+--quickCheck (plusComm    :: [Int] -> [Int] -> Property)
+--quickCheck (mulDistribL :: [Int] -> [Int] -> [Int] -> Property)
+--quickCheck (mulDistribR :: [Int] -> [Int] -> [Int] -> Property)
+--quickCheck (plusId      :: [Int] -> Property)
+--quickCheck (mulId       :: [Int] -> Property)
 
+--liftA2 (,) [1,2,3] [4,5,6]
 
-
-
-
-foldr (||) False
-
-let [e1,e2,e3] = [True,True,True]
-
-((e1 || e2) || e3) || False
+[1,2,3] <.> [3,4,5]

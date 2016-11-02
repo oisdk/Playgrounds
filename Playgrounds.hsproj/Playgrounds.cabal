@@ -49,9 +49,10 @@ Executable Playgrounds
       Data.Foldable.Multi
       Data.Foldable.Tricks
       Data.Expr
+      Data.Semiring.Map
+      Data.Semiring.Test
       Data.Semiring.Numeric
       Data.Semiring.Free
-      Data.Semiring.Map
       Data.Scott.List
       Control.Applicative.Alternative
       Control.Applicative.Janus
