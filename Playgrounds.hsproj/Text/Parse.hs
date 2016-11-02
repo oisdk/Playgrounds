@@ -25,10 +25,10 @@ instance Monad Parser where
   x >>= f = Parser $ \s -> [ (y,s) | (x,s) <- parse x s, (y,s) <- parse (f x) s ]
   
 anyChar :: Parser Char
-anyChar = Parser (choice . uncons)
+anyChar = Parser (toAlt . uncons)
 
 satisfies :: (Char -> Bool) -> Parser Char
-satisfies p = filterA p anyChar
+satisfies p = afilter p anyChar
 
 oneOf :: String -> Parser Char
 oneOf chrs = satisfies (`elem` chrs)
@@ -37,7 +37,7 @@ wspace :: Parser ()
 wspace = (void . many . oneOf) " \t\n\r"
 
 digit :: Parser Int
-digit = flip mapMaybe anyChar $ \case
+digit = flip mapAlt anyChar $ \case
   '0' -> Just 0
   '1' -> Just 1
   '2' -> Just 2

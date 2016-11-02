@@ -1,8 +1,10 @@
-{-# LANGUAGE DataKinds        #-}
-{-# LANGUAGE GADTs            #-}
-{-# LANGUAGE KindSignatures   #-}
-{-# LANGUAGE TypeOperators    #-}
-{-# LANGUAGE RebindableSyntax #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE KindSignatures        #-}
+{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE RebindableSyntax      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Control.Monad.Complexity where
 
@@ -11,14 +13,17 @@ import Control.Arrow (first, second)
 import GHC.TypeLits
 import Prelude hiding (Functor(..), Applicative(..), Monad(..), length, (<$>))
 import Prelude (fail)
+import Control.Monad.Restricted
 
 newtype Cost (n :: Nat) a = Cost { unCost :: a }
 
-(>>=) :: Cost n x -> (x -> Cost m y) -> Cost (n + m) y
-(>>=) (Cost x) f = (Cost . unCost . f) x
+instance Functor (Cost n) a b where
+  fmap f (Cost x) = Cost (f x)
 
-return :: x -> Cost 0 x
-return = Cost
+instance Pointed (Cost 0) a where
+  pure = Cost
+
+instance Apply 
 
 single :: x -> Cost 1 x
 single = Cost

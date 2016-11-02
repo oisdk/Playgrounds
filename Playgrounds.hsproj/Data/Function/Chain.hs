@@ -1,18 +1,18 @@
 {-# language GADTs, KindSignatures, DataKinds, TypeOperators, RankNTypes, TypeFamilies #-}
 
 module Data.Function.Chain where
-
-data FuncChain a (fs :: [*]) b where
-  Fn   :: (a -> b) -> FuncChain a '[] b
-  (:.) :: (b -> c) -> FuncChain a xs b -> FuncChain a (b ': xs) c
+  
+data FuncChain (fs :: [*]) a b where
+  Fn   :: (a -> b) -> FuncChain '[] a b
+  (:.) :: (b -> c) -> FuncChain xs a b -> FuncChain (b ': xs) a c
 
 infixr 5 :.
 
-run :: FuncChain a xs b -> a -> b
+run :: FuncChain xs a b -> a -> b
 run (Fn    f) x = f x
 run (f :. fs) x = f (run fs x)
 
-undo :: FuncChain a (x ': xs) b -> FuncChain a xs x
+undo :: FuncChain (x ': xs) a b -> FuncChain xs a x
 undo (_ :. fs) = fs
 
 type family (++) (xs :: [*]) (ys :: [*]) :: [*] where
@@ -20,6 +20,6 @@ type family (++) (xs :: [*]) (ys :: [*]) :: [*] where
   (++) '[] b = b
   (++) (a ': as) bs = a ': (as ++ bs)
   
-append :: FuncChain b xs c -> FuncChain a ys b -> FuncChain a (xs ++ (b ': ys)) c
+append :: FuncChain xs b c -> FuncChain ys a b -> FuncChain (xs ++ (b ': ys)) a c
 append (Fn f)    gs = f :. gs
 append (f :. fs) gs = f :. (append fs gs)

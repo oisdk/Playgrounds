@@ -1,0 +1,5 @@
+-- Haskell Playground 1.0
+let m = fromList [1,2,3,4,5,5] :: MultiSet Int
+let n = fromList [3..8]
+
+toAssocs (mappend m n)

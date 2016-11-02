@@ -15,6 +15,8 @@ module Data.Semiring
   ( Semiring(..)
   , Add(..)
   , Mul(..)
+  , mul
+  , add
   ) where
 
 import           Data.Coerce           (coerce)
@@ -135,15 +137,21 @@ type WrapBinary f a = (a -> a -> a) -> f a -> f a -> f a
 -- 'Semiring' constraint, rather than 'Num'.
 newtype Add a = Add
   { getAdd :: a
-  } deriving (Eq, Ord, Read, Show, Bounded, Generic, Generic1, Num
+  } deriving (Eq, Ord, Read, Show, Enum, Bounded, Generic, Generic1, Num
              ,Arbitrary)
 
 -- | Monoid under '<.>'. Analogous to 'Data.Monoid.Product', but uses the
 -- 'Semiring' constraint, rather than 'Num'.
 newtype Mul a = Mul
   { getMul :: a
-  } deriving (Eq, Ord, Read, Show, Bounded, Generic, Generic1, Num
+  } deriving (Eq, Ord, Read, Show, Enum, Bounded, Generic, Generic1, Num
              ,Arbitrary)
+
+add :: (Semiring a, Foldable f) => f a -> a
+add = getAdd . foldMap Add
+
+mul :: (Semiring a, Foldable f) => f a -> a
+mul = getMul . foldMap Mul
 
 instance Functor Add where fmap = coerce
 
@@ -252,7 +260,8 @@ instance Monoid a => Semiring (Endo a) where
 ------------------------------------------------------------------------
 -- Boring instances
 ------------------------------------------------------------------------
-
+instance Semiring Float
+instance Semiring Double
 instance Semiring Int
 instance Semiring Int8
 instance Semiring Int16

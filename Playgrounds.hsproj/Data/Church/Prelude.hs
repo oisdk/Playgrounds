@@ -3,14 +3,12 @@
 
 module Data.Church.Prelude
   ( module P
-  , SemiGroup(..)
+  , Semigroup(..)
   , Monoid(..)
-  , SemiRing(..)
-  , Ring(..)
   , Eq(..)
   , Ord(..)
   , Bool(..)
-  , IsNum(..)
+  , Num(..)
   , true
   , false
   , lt
@@ -46,59 +44,18 @@ import Prelude as P
   , id
   , Integer
   , Int
-  , Enum(..))
+  , Enum(..)
+  , Num(..) )
 
 import qualified Prelude as NonChurch
 import Data.Function
-
-class SemiGroup a where
-  infixr 6 <>
-  (<>) :: a -> a -> a
-  
-class SemiGroup a => Monoid a where
-  mempty :: a
-
-class SemiRing a where
-  infixl 6 +
-  (+) :: a -> a -> a
-  zero :: a
-  infixl 7 *
-  (*) :: a -> a -> a
-  one :: a
-
-class SemiRing a => Ring a where
-  infixl 6 -
-  (-) :: a -> a -> a
-
-class IsNum a where
-  fromInteger :: Integer -> a
-
-instance IsNum Integer where fromInteger = id
-
-instance SemiRing Integer where
-  (+) = (NonChurch.+)
-  zero = 0
-  (*) = (NonChurch.*)
-  one = 1
-  
-instance Ring Integer where
-  (-) = (NonChurch.-)
+import Data.Semigroup
+import Data.Coerce
   
 instance Eq Integer where
   x == y = case x NonChurch.== y of
     NonChurch.True -> true
     NonChurch.False -> false
-  
-instance Ring Int where
-  (-) = (NonChurch.-)
-  
-instance IsNum Int where fromInteger = NonChurch.fromInteger
-
-instance SemiRing Int where
-  (+) = (NonChurch.+)
-  zero = 0
-  (*) = (NonChurch.*)
-  one = 1
   
 instance Eq Int where
   x == y = case x NonChurch.== y of
@@ -110,8 +67,7 @@ newtype Bool = B { ifThenElse :: forall a. a -> a -> a }
 not :: Bool -> Bool
 not (B x) = B (flip x)
 
-instance Show Bool where
-  show b = if b then "True" else "False"
+instance Show Bool where show b = if b then "True" else "False"
 
 class Eq a where
   infix 4 ==
@@ -154,7 +110,7 @@ x < y = not (y <= x)
 
 infix 4 >
 (>) :: Ord a => a -> a -> Bool
-x > y = not (x <= y)  
+x > y = not (x <= y)
 
 instance Ord Bool where
   compare (B x) (B y) = O $ \lt eq gt -> x (y eq gt) (y lt eq)
@@ -192,8 +148,9 @@ infixr 2 ||
 (||) :: Bool -> Bool -> Bool
 (||) x y = B (\t -> ifThenElse x t . ifThenElse y t)
 
-instance SemiGroup Ordering where
+instance Semigroup Ordering where
   x <> y = comp x x y x
   
 instance Monoid Ordering where
   mempty = eq
+  mappend = (<>)

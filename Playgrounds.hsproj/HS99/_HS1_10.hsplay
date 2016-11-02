@@ -1,5 +1,0 @@
--- Haskell Playground 1.0
---isPalindrome [1,2,3,4,5,5,4,3,2,1]
-rev [1..10]
-
-pal [1,2,3,3,2,1]

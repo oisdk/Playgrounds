@@ -1,0 +1,5 @@
+-- Haskell Playground 1.0
+let x = Łukasiewicz 1
+let y = Łukasiewicz 5
+
+x <.> y

@@ -2,78 +2,85 @@
 
 module Control.Monad.BinOdds where
 
-import Data.Ratio
-import Control.Arrow
+import Data.Bool
 import Data.Foldable
-import Data.Monoid
-import Data.List
-import Control.Applicative
-import Control.Monad
-import Data.Uniques
+import qualified Data.Map.Strict as Map
+import Data.Semiring
+import Data.Semiring.Numeric
 
-data Odds a = Certain a
-            | Odds (Odds a) Rational (Odds a)
-            deriving (Eq, Functor, Foldable, Show)
+data Ratio o = o :%: o deriving (Eq, Ord, Functor, Foldable, Show)
 
-pattern n :% d <- ((numerator >>> fromInteger) &&& (denominator >>> fromInteger) -> (n, d))
+unRat :: Fractional a => Ratio a -> a
+unRat (n :%: d) = n / d
 
-foldOdds :: (b -> Rational -> b -> b) -> (a -> b) -> Odds a -> b
+data Odds o a = Certain a
+              | Choice (Odds o a) (Ratio o) (Odds o a)
+              deriving (Eq, Ord, Functor, Foldable, Show)
+            
+foldOdds :: (b -> Ratio o -> b -> b) -> (a -> b) -> Odds o a -> b
 foldOdds f b = r where
   r (Certain x) = b x
-  r (Odds xs p ys) = f (r xs) p (r ys)
+  r (Choice xs p ys) = f (r xs) p (r ys)
   
-unfoldOdds :: (b -> Either a (b,Rational,b)) -> b -> Odds a
+unfoldOdds :: (b -> Either a (b,Ratio o,b)) -> b -> Odds o a
 unfoldOdds f = r where
   r b = case f b of
     Left a -> Certain a
-    Right (x,p,y) -> Odds (r x) p (r y)
-  
-fi :: Bool -> a -> a -> a
-fi True  t _ = t
-fi False _ f = f
+    Right (x,p,y) -> Choice (r x) p (r y)
 
-probOf :: Eq a => a -> Odds a -> Rational
+probOf :: (Eq a, Semiring o) => a -> Odds o a -> Ratio o
 probOf e = foldOdds f b where
-  b x = fi (e == x) 1 0
-  f x (n:%d) y = (x * n + y * d) / (n + d)
+  b x = bool one zero (e == x) :%: one
+  f (xn:%:xd) (n:%:d) (yn:%:yd) = ((xn<.>yd<.>n) <+> (xd<.>yn<.>d)) :%: (xd <.> yd <.> (n <+> d))
 
-equalOdds :: [a] -> Maybe (Odds a)
-equalOdds [] = Nothing
-equalOdds xs = Just (unfoldOdds f (xs,length xs)) where
-  f ([x],_) = Left x
-  f (xs,n) = Right ((ys,l), fromIntegral l % fromIntegral r, (zs,r)) where
+conv' :: Semiring a => Int -> a
+conv' 0 = zero
+conv' 1 = one
+conv' n = one <+> conv' (n-1)
+
+fromListOdds :: (([b], Int) -> o) -> (b -> a) -> [b] -> Maybe (Odds o a)
+fromListOdds fr e = r where
+  r [] = Nothing
+  r xs = Just (unfoldOdds f (xs, length xs))
+  f ([x],_) = Left (e x)
+  f (xs ,n) = Right ((ys,l), fr (ys,l) :%: fr (zs,r), (zs,r)) where
     l = n `div` 2
     r = n - l
     (ys,zs) = splitAt l xs
 
-fromDistrib :: [(a,Integer)] -> Maybe (Odds a)
-fromDistrib [] = Nothing
-fromDistrib xs = Just (unfoldOdds f (xs,length xs)) where
-  f ([(x,_)],_) = Left x
-  f (xs,n) = Right ((ys,l), tots ys % tots zs , (zs,r)) where
-    l = n `div` 2
-    r = n - l
-    (ys,zs) = splitAt l xs
-  tots = sum . map snd
-  
-toSorted :: Ord a => [a] -> Maybe (Odds a)
-toSorted [] = Nothing
-toSorted xs = Just (unfoldOdds f xs) where
-  f [x] = Left x
-  f (x:xs) = case partition (<x) xs of
-    ([],ys) -> Right ([x], 1 % fromIntegral (length ys),ys)
-    (xs,[]) -> Right (xs, fromIntegral (length xs), [x])
-    (xs,ys) -> Right (xs, fromIntegral (length xs) % fromIntegral (length ys + 1), x:ys)
+equalOdds :: Semiring o => [a] -> Maybe (Odds o a)
+equalOdds = fromListOdds (conv' . snd) id
 
-flatten :: Odds (Odds a) -> Odds a
-flatten = foldOdds Odds id
+fromDistrib :: Semiring o => [(a,o)] -> Maybe (Odds o a)
+fromDistrib = fromListOdds (add . map snd . fst) fst
 
-instance Applicative Odds where
+flatten :: Odds o (Odds o a) -> Odds o a
+flatten = foldOdds Choice id
+
+instance Applicative (Odds o) where
   pure = Certain
   fs <*> xs = flatten (fmap (<$> xs) fs)
   
-instance Monad Odds where
+instance Monad (Odds o) where
   x >>= f = flatten (f <$> x)
   
-compress :: Ord a => Odds a -> Odds a
-compress xs = let Just ys = (fromDistrib . counts) xs in ys
+--lcd :: Foldable f => f Rational -> Integer
+--lcd = foldl' (\a e -> lcm a (denominator e)) 1
+--
+--toDistrib :: Odds a -> [(a,Integer)]
+--toDistrib = factorOut . foldOdds f b where
+--  b x = [(x,1)]
+--  f l p r = (map.fmap) (n%t*) l ++ (map.fmap) (d%t*) r where
+--    n = numerator p
+--    d = denominator p
+--    t = n + d
+--  factorOut xs = (map.fmap) (numerator . (lcd'*)) xs where
+--    lcd' = fromIntegral . lcd . map snd $ xs
+--
+--counts :: (Ord a, Num n) => [(a,n)] -> [(a,n)]
+--counts = 
+--  Map.assocs . 
+--  Map.fromListWith (+)
+--      
+--compress :: Ord a => Odds a -> Odds a
+--compress xs = let Just ys = (fromDistrib . counts . toDistrib) xs in ys

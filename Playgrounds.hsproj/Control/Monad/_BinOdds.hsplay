@@ -1,2 +1,5 @@
 -- Haskell Playground 1.0
-guard
+let Just o = equalOdds "aabcd"
+
+let r c = fmap getŁukasiewicz (probOf c o)
+

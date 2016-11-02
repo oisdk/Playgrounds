@@ -10,34 +10,23 @@ import Data.Functor
 import Control.Arrow
 import Control.Lens (itraverse)
 
-data Janus f a where
-  Pure :: a -> Janus f a
-  Lift :: f a -> Janus f a
-  App  :: Janus f (a -> b) -> Janus f a -> Janus f b
-  Then :: Janus f a -> Janus f b -> Janus f b
-  Map  :: (a -> b) -> Janus f a -> Janus f b
+data Janus f a = Janus
+  { forwards :: f a
+  , backards :: f a }
+
+instance Functor f => Functor (Janus f) where
+  fmap f (Janus x y) = Janus (fmap f x) (fmap f y)
   
-instance Functor (Janus f) where
-  fmap = Map
+instance Alternative f => Applicative (Janus f) where
+  pure x = Janus (pure x) (pure x)
+  Janus fs gs <*> Janus xs ys = Janus fd (ys <**> gs <|> fd) where
+    fd = fs <*> xs
   
-instance Applicative (Janus f) where
-  pure = Pure
-  (<*>) = App
-  (*>) = Then
-  (<*) = flip Then
+liftJ :: f a -> Janus f a
+liftJ x = Janus x x
   
 run :: Alternative f => Janus f a -> f a
-run (Pure x) = pure x
-run (Lift x) = x
-run (App fs xs) =
-  let f = run fs
-      x = run xs
-   in f <*> x <|> x <**> f
-run (Then xs ys) =
-  let x = run xs
-      y = run ys
-  in (x *> y) <|> (y <* x)
-run (Map f xs) = fmap f (run xs)
+run (Janus f b) = f <|> b
 
 data Ins = Jump String
          | Label String
@@ -45,10 +34,9 @@ data Ins = Jump String
          deriving Show
 
 f :: Int -> Ins -> Janus (StateT [(String,Int)] Maybe) Int
-f i Pass = Lift (lift (Just (-1)))
-f i (Label s) = Lift (modify ((s,i):) ) *> Lift (lift (Just (-1)))
-f i (Jump s) = Lift (lift =<< gets (lookup s))
+f i Pass      = liftJ (lift (Just (-1)))
+f i (Label s) = liftJ (modify ((s,i):) ) *> liftJ (lift (Just (-1)))
+f i (Jump  s) = liftJ (lift =<< gets (lookup s))
 
 parse :: [Ins] -> Maybe [Int]
 parse xs = evalStateT (run (itraverse f xs)) []
-

@@ -11,56 +11,51 @@ Executable Playgrounds
   main-is: Playgrounds.hs
   buildable: True
   build-depends:
-      transformers-base -any,
+      random -any,
       mtl -any,
-      monad-control -any,
-      transformers -any,
       semigroups -any,
+      prelude-extras -any,
+      polyparse -any,
       base -any,
-      containers -any,
       QuickCheck -any,
+      containers -any,
       array -any,
-      mmorph -any,
+      transformers -any,
       lens -any
   other-modules:
+      Text.ExprPrint
+      Text.Parse
       Assignments.HS2
       Assignments.HS3
       Data.Semiring
       Data.Uniques
-      Data.Bool
-      Data.BoolQuery
       Data.Church.List
       Data.Church.Nat
       Data.Church.Pair
       Data.Church.Prelude
+      Data.Bool
       Data.FancyExpr
-      Data.NonEmpty
-      Data.Para
+      Data.Traversable.Extras
       Data.ST
       Data.Deque
       Data.Safe
-      Data.Traversable.Extras
       Data.Functor.Recursive
       Data.BoolSimplify
       Data.Unfold
-      Data.PList
-      Data.FoldTricks
       Data.Function.Chain
       Data.Function.Operators
       Data.Function.Utils
-      Data.Foldable.Multi
-      Data.HS2048
       Data.RList
+      Data.Foldable.Multi
+      Data.Foldable.Tricks
       Data.Expr
+      Data.Semiring.Numeric
+      Data.Semiring.Free
+      Data.Semiring.Map
       Data.Scott.List
-      Data.Ring
-      Text.ExprPrint
-      Text.Pad
-      Text.Parse
       Control.Applicative.Alternative
       Control.Applicative.Janus
       Control.Monad.BinOdds
-      Control.Monad.Church.Source
       Control.Monad.Church.State
       Control.Monad.Church.Writer
       Control.Monad.Undo
@@ -68,10 +63,8 @@ Executable Playgrounds
       Control.Monad.FastWriter
       Control.Monad.Complexity
       Control.Monad.Prob
-      Control.Monad.Source
       Control.Monad.Split
-      Control.Monad.ListT
-      HS99.HS1_10
+      Control.Monad.Restricted
       Numeric.Countdown
       Numeric.Bases
       Numeric.Decimal

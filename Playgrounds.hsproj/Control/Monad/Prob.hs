@@ -1,66 +1,31 @@
-{-# language DeriveFunctor, DeriveFoldable, DeriveTraversable, ViewPatterns, PatternSynonyms #-}
+{-# LANGUAGE TupleSections, PatternSynonyms, ViewPatterns, DeriveFunctor, DeriveFoldable #-}
 
 module Control.Monad.Prob where
+
+import Data.Semiring
+import Control.Applicative
+import Text.Parse
+import Test.QuickCheck
+import Prelude.Extras
+import Control.Applicative.Alternative
+
+newtype WeightedT s m a = WeightedT
+  { runWeightedT :: m (a, s) 
+  } deriving Functor
   
-import Data.Ratio
-import Data.Monoid
-import Data.List
-import Control.Arrow
-import Data.Uniques
-import Data.Foldable
+instance (Semiring s, Applicative m) => Applicative (WeightedT s m) where
+  pure x = WeightedT (pure (x,one))
+  fs <*> xs = WeightedT $
+    liftA2 k (runWeightedT fs) (runWeightedT xs)
+      where k ~(a, w) ~(b, w') = (a b, w <.> w')
 
-pattern (:%) :: Integer -> Integer -> Rational
-pattern n :% d <- (numerator &&& denominator -> (n,d)) where
-  n :% d = n % d
+instance (Semiring s, Monad m) => Monad (WeightedT s m) where
+  WeightedT x >>= f = WeightedT $
+    x >>= (\(x,p) -> (fmap.fmap) (p<.>) (runWeightedT (f x)))
+    
+instance (Semiring s, Alternative m, Ord s) => Alternative (WeightedT s m) where
+  empty = WeightedT ((,zero) <$> empty)
+  WeightedT x <|> WeightedT y = WeightedT (x <|> y)
   
-data Prob a = Certain a
-            | Choice a Rational (Prob a)
-            deriving (Functor, Foldable, Traversable)
-
-foldOdds :: (a -> Rational -> b -> b) -> (a -> b) -> Prob a -> b
-foldOdds f b = r where
-  r (Certain x) = b x
-  r (Choice x p xs) = f x p (r xs)
-
-probOfEvent :: Eq a => a -> Prob a -> Rational
-probOfEvent e = foldOdds f b where
-  b x = if e == x then 1 else 0
-  f x n r = (if e == x then n else r) / (n + 1)
-
-probOf :: (a -> Bool) -> Prob a -> Rational
-probOf p = foldOdds f b where
-  b x = if p x then 1 else 0
-  f x n r = (if p x then r + n else r) / (n + 1)
-
-fromDistrib :: Foldable f => f (a,Integer) -> Maybe (Prob a)
-fromDistrib = fst . foldr f (Nothing,0) where
-  f (x,p) (a,t) = (Just (o a), t + p) where
-    o = maybe (Certain x) (Choice x (p % t))
-
-equalOdds :: (Functor f, Foldable f) => f a -> Maybe (Prob a)
-equalOdds = fromDistrib . fmap (flip (,) 1)
-               
-append :: Prob a -> Rational -> Prob a -> Prob a
-append = foldOdds f Choice where
-  f e r a p ys = Choice e ip (a op ys) where
-    ip = p * r / (p + r + 1)
-    op = p / (r + 1)
-
-flatten :: Prob (Prob a) -> Prob a
-flatten = foldOdds append id
-
-instance Applicative Prob where
-  pure = Certain
-  fs <*> xs = flatten (fmap (<$> xs) fs)
-  
-instance Monad Prob where
-  x >>= f = flatten (f <$> x)
-
-instance Show a => Show (Prob a) where
-  showsPrec _ = foldOdds f shows where
-    f x (n :% d) = flip (foldr (.))
-      [ shows x, showString " |", shows n, showChar ':', shows d, showString "| " ]
-
-compress :: Ord a => Prob a -> Prob a
-compress xs = let Just ys = (fromDistrib . counts) xs in ys
-
+evalWeightedT :: (Semiring s, Functor f) => WeightedT s f a -> f s
+evalWeightedT (WeightedT x) = fmap snd x

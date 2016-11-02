@@ -110,15 +110,9 @@ fromBool :: Bool -> CombiningBool
 fromBool True  = T
 fromBool False = F
 
-states :: Ord a => Expr a -> Expr (Map a Bool)
+states :: Ord a => Expr a -> [Map a Bool]
 states = foldlM f mempty . ordNub where
-  f a e = pure (insert e False a) :|: pure (insert e True a)
-  
-equivalent :: Ord a => Expr a -> Expr a -> Bool
-equivalent x y = all (uncurry (==)) [ (evalState x s, evalState y s) | s <- allStates ] where
-  allStates = states (Set.union (fromFoldable x) (fromFoldable y))
-  evalState e s = eval (`sureLookup` s) e
-  fromFoldable = foldr Set.insert Set.empty
+  f a e = [insert e False a, insert e True a]
 
 minTerms :: Ord a => Expr a -> Set (Map a Bool)
 minTerms e = Set.fromList [ s | s <- states e, eval (`sureLookup` s) e ]
