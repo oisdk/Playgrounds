@@ -1,6 +1,33 @@
 -- Haskell Playground 1.0
-let a = pure 'a' :: WeightedT Int [] Char
-let b = pure 'b' :: WeightedT Int [] Char
-let c = pure 'c' :: WeightedT Int [] Char
+let a = pure True  :: WeightedT Int [] Bool
+let c = pure False :: WeightedT Int [] Bool
 
-evalWeightedT (a <|> b <|> c)
+let die = WeightedT [(1,1),(2,1),(3,1),(4,1),(5,1),(6,1)]
+
+let dice = (+) <$> die <*> die
+
+let gen = WeightedT [(True,1),(False,1)]
+
+probOf id (gen <|> gen)
+
+--probOf (2==) ((+) <$> dice <*> dice)
+--
+--guard
+--
+--(c <|> empty) == c
+--
+--((,) <$> a <*> c)
+--
+--((||) <$> a <*> c)
+--(c <|> a)
+--
+----
+----
+----(succ *** pred) (3,4)
+----
+----runWeightedT ((a <|> b) <|> c)
+----runWeightedT (a <|> (b <|> c))
+--
+--ABC (1,2)
+
+(%)

@@ -1,1 +1,15 @@
 -- Haskell Playground 1.0
+--let l = cycle [One,Two,Three]
+--let x = take 1000000 l
+--maxSlow x
+--maxFast x
+
+
+
+
+
+foldr (||) False
+
+let [e1,e2,e3] = [True,True,True]
+
+((e1 || e2) || e3) || False

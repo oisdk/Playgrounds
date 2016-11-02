@@ -12,7 +12,7 @@ import Data.Monoid
 import Control.Monad
 
 newtype SemiringMap a b = SemiringMap
-  { getMap :: Map.Map a (Free b)
+  { getMap :: Map.Map a b
   } deriving (Functor, Show)
 
 type Map a b      = SemiringMap a (First b)
@@ -21,32 +21,32 @@ type MultiMap a b = SemiringMap a [b]
 type MultiSet a   = SemiringMap a (Add Int)
 
 lookup :: (Ord a, Monoid b) => a -> SemiringMap a b -> b
-lookup x (SemiringMap xs) = foldMap fold (Map.lookup x xs)
+lookup x (SemiringMap xs) = fold (Map.lookup x xs)
 
 add :: (Ord a, Semiring b) => a -> SemiringMap a b -> SemiringMap a b
-add x (SemiringMap xs) = SemiringMap (Map.insertWith (<+>) x (pure one) xs)
+add x (SemiringMap xs) = SemiringMap (Map.insertWith (<+>) x one xs)
 
-insert :: Ord a => a -> b -> SemiringMap a b -> SemiringMap a b
-insert k v (SemiringMap xs) = SemiringMap (Map.insertWith mappend k (pure v) xs)
+insert :: (Ord a, Monoid b) => a -> b -> SemiringMap a b -> SemiringMap a b
+insert k v (SemiringMap xs) = SemiringMap (Map.insertWith mappend k v xs)
 
-instance Ord a => Monoid (SemiringMap a b) where
+instance (Ord a, Monoid b) => Monoid (SemiringMap a b) where
   mempty = SemiringMap Map.empty
   mappend (SemiringMap xs) (SemiringMap ys) = SemiringMap (Map.unionWith mappend xs ys)
 
 delete :: Ord a => a -> SemiringMap a b -> SemiringMap a b
 delete x (SemiringMap xs) = SemiringMap (Map.delete x xs)
 
-intersect :: Ord a => SemiringMap a b -> SemiringMap a b -> SemiringMap a b
+intersect :: (Ord a, Semiring b) => SemiringMap a b -> SemiringMap a b -> SemiringMap a b
 intersect (SemiringMap xs) (SemiringMap ys) = SemiringMap (Map.intersectionWith (<.>) xs ys)
 
 fromList :: (Ord a, Semiring b) => [a] -> SemiringMap a b
-fromList = foldr add mempty
+fromList = foldr add (SemiringMap Map.empty)
 
 fromAssocs :: (Ord a, Monoid b) => [(a,b)] -> SemiringMap a b
 fromAssocs = foldr (uncurry insert) mempty
 
 toList :: (Semiring b, Enum b) => SemiringMap a b -> [a]
-toList = uncurry (flip replicate) <=< (Map.assocs . fmap (fromEnum.unFree) . getMap)
+toList = uncurry (flip replicate) <=< (Map.assocs . fmap fromEnum . getMap)
 
 toAssocs :: Monoid b => SemiringMap a b -> [(a,b)]
-toAssocs = Map.assocs . fmap fold . getMap
+toAssocs = Map.assocs . getMap
