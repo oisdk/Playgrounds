@@ -1,4 +1,8 @@
 -- Haskell Playground 1.0
---take 3 (bfs trips)
+take 3 (bfs trips)
 
 --mappend (singleton 1) (singleton 3)
+
+let x = pure 1 :: List Integer
+
+x <> pure 2 <> pure 3

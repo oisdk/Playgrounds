@@ -72,8 +72,9 @@ Executable Playgrounds
       Control.Permute
       Control.Applicative.Alternative
       Control.Applicative.Janus
-      Test.Function
+      NewModule
       Numeric.Bases
       Numeric.Digit
       Numeric.Small
       Numeric.Countdown
+      Test.Function
