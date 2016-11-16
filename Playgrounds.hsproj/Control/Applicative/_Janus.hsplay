@@ -1,9 +1,4 @@
 -- Haskell Playground 1.0
-parse
-  [ Jump "def"
-  , Jump "abc"
-  , Label "abc"
-  , Jump "abc"
-  , Jump "abc"
-  , Label "def"
-  , Jump "def"]
+instructions [Jump "abc", Pass, Label "abc", Jump "abc"]
+
+runStateT . itraverse parseIns

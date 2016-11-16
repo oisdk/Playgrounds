@@ -11,21 +11,21 @@ Executable Playgrounds
   main-is: Playgrounds.hs
   buildable: True
   build-depends:
+      free -any,
       random -any,
       mtl -any,
+      smallcheck -any,
       semigroups -any,
-      prelude-extras -any,
-      polyparse -any,
-      base -any,
-      QuickCheck -any,
-      containers -any,
-      array -any,
       transformers -any,
-      lens -any
+      base -any,
+      containers -any,
+      QuickCheck -any,
+      lens -any,
+      array -any,
+      prelude-extras -any
   other-modules:
-      Text.ExprPrint
-      Text.Parse
       Assignments.HS2
+      Assignments.HS4
       Assignments.HS3
       Data.Semiring
       Data.Uniques
@@ -48,14 +48,17 @@ Executable Playgrounds
       Data.RList
       Data.Foldable.Multi
       Data.Foldable.Tricks
+      Data.Knots.Rack
       Data.Expr
       Data.Semiring.Map
       Data.Semiring.Test
       Data.Semiring.Numeric
       Data.Semiring.Free
       Data.Scott.List
-      Control.Applicative.Alternative
-      Control.Applicative.Janus
+      Text.ExprPrint
+      Text.Parse
+      Control.Replicate
+      Control.Monad.Restricted
       Control.Monad.BinOdds
       Control.Monad.Church.State
       Control.Monad.Church.Writer
@@ -65,7 +68,12 @@ Executable Playgrounds
       Control.Monad.Complexity
       Control.Monad.Prob
       Control.Monad.Split
-      Control.Monad.Restricted
-      Numeric.Countdown
+      Control.Monad.Odds
+      Control.Permute
+      Control.Applicative.Alternative
+      Control.Applicative.Janus
+      Test.Function
       Numeric.Bases
-      Numeric.Decimal
+      Numeric.Digit
+      Numeric.Small
+      Numeric.Countdown

@@ -21,7 +21,7 @@ foldl1 f = foldl' (\a e -> Just . maybe e (flip f e) $ a) Nothing
 (!!) = foldr f (const Nothing) where
   f e _ 0 = Just e
   f _ a n = a (n-1)
-  
+
 tail :: [a] -> Maybe [a]
 tail [] = Nothing
 tail (_:xs) = Just xs

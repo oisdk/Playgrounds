@@ -1,0 +1,15 @@
+-- Haskell Playground 1.0
+--
+--(take 3 . foldr (:) []) ex1
+--
+--let h = foldr (\e _ -> e) undefined 
+--
+--print (mkSearch [1..10])
+--
+
+
+--head (star [1])
+
+--star [1] !! 1
+
+-- star [1,12,4,2,1] !! 15

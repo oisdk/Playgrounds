@@ -4,7 +4,6 @@ module Control.Monad.Prob where
 
 import Data.Semiring
 import Control.Applicative
-import Text.Parse
 import Test.QuickCheck
 import Prelude.Extras
 import Control.Arrow (first, (***), (&&&))
@@ -49,16 +48,19 @@ instance (Semiring s, Applicative m) => Applicative (WeightedT s m) where
 instance (Semiring s, Monad m) => Monad (WeightedT s m) where
   WeightedT x >>= f = WeightedT $
     x >>= (\(x,p) -> (fmap.fmap) (p<.>) (runWeightedT (f x)))
-    
-instance (Semiring s, Alternative m, Monad m) => Alternative (WeightedT s m) where
-  empty = WeightedT ((,zero) <$> empty)
-  WeightedT x <|> WeightedT y = maybe empty pure =<< WeightedT (liftA2 f (opt x) (opt y)) where
-    opt m = (fmap.first) Just m <|> pure (Nothing,zero)
-    f (xr,xp) (yr,yp) = (xr<|>yr,xp<+>yp)
-    
-  
-evalWeightedT :: (Semiring s, Functor f) => WeightedT s f a -> f s
-evalWeightedT (WeightedT x) = fmap snd x
 
-probOf :: (Semiring s, Integral s) => (a -> Bool) -> WeightedT s [] a -> Ratio s
-probOf e (WeightedT xs) = uncurry (%) (add [ (if e x then p else zero,one) | (x,p) <- xs])
+instance (Semiring s, Monad m, Alternative m, Foldable m) => Alternative (WeightedT s m) where
+  empty = WeightedT empty
+  WeightedT xs <|> WeightedT ys = WeightedT
+    $ (fmap.fmap.(<.>)) yssum xs <|> (fmap.fmap) (xssum<.>) ys where
+      addps = getAdd . foldMap (Add . snd)
+      xssum = addps xs
+      yssum = addps ys
+    
+uniform :: Semiring s => [a] -> WeightedT s [] a
+uniform = WeightedT . map (,one)
+
+probOf :: Semiring s => (a -> Bool) -> WeightedT s [] a -> (s,s)
+probOf event = getAdd . foldMap (\(x,p) -> Add (if event x then p else zero, p) ) . runWeightedT
+
+

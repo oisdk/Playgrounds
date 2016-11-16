@@ -16,6 +16,7 @@ module Data.Semiring.Test
   , mulDistribR
   , plusId
   , mulId
+  , annihilate
   , semiringLaws
   ) where
 
@@ -121,4 +122,17 @@ semiringLaws (_ :: Proxy a) = conjoin
   , property (mulDistribL :: a -> a -> a -> Property)
   , property (mulDistribR :: a -> a -> a -> Property)
   , property (plusId      ::           a -> Property)
-  , property (mulId       ::           a -> Property)]
+  , property (mulId       ::           a -> Property)
+  , property (annihilate  ::           a -> Property)]
+    
+-- | Annihilation of '<.>' by 'zero'.
+annihilate :: (Eq a, Semiring a, Show a) => a -> Property
+annihilate x = counterexample s (l == zero && r == zero) where
+  l = x <.> zero
+  r = zero <.> x
+  s = unlines
+    [ "Testing annihilation of <.> by zero."
+    , "Law: x <.> zero = zero <.> x = zero"
+    , "x = " ++ show x
+    , "x <.> zero = " ++ show l
+    , "zero <.> x = " ++ show r ]

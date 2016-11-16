@@ -1,34 +1,67 @@
-{-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable #-}
+{-# LANGUAGE DeriveFoldable             #-}
+{-# LANGUAGE BangPatterns               #-}
+{-# LANGUAGE DeriveFunctor              #-}
+{-# LANGUAGE DeriveTraversable          #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
+-- | The Free semiring.
 module Data.Semiring.Free where
-  
-import Data.Semiring
-import Control.Applicative (liftA2)
 
-newtype Free a = Free
-  { getFree :: [[a]]
-  } deriving (Eq, Ord, Show, Foldable, Functor, Traversable)
-  
-instance Applicative Free where
-  pure = Free . pure . pure
-  Free fs <*> Free xs = Free (liftA2 (<*>) fs xs)
-  
-instance Semiring (Free a) where
-  Free xs <+> Free ys = Free (xs ++ ys)
-  Free xs <.> Free ys = Free (liftA2 (++) xs ys)
-  one = Free [[]]
-  zero = Free []
-  
-instance Monoid (Free a) where
-  mempty = zero
-  mappend = (<+>)
-  
--- | `Free` is left adjoint to the forgetful functor from `Semiring`s to types.
-liftFree :: Semiring s => (a -> s) -> Free a -> s
-liftFree f = unFree . fmap f
+import           Control.Applicative (liftA2)
 
-unFree :: Semiring s => Free s -> s
-unFree = add . fmap mul . getFree
+import           Data.Coerce
 
-compress :: Semiring s => Free s -> Free s
-compress = pure . unFree
+import           Data.Function (on)
+import           Data.List (sort)
+
+import           Data.Semiring
+import           Data.Ord (comparing)
+
+import qualified Data.Map.Strict as Map
+import           Data.Map.Strict (Map)
+
+import Control.Monad hiding (join)
+import Data.Monoid
+
+import Control.Applicative
+
+
+instance Semiring a => Semiring [a] where
+  one = [one]
+  zero = []
+  [] <+> ys = ys
+  xs <+> [] = xs
+  (x:xs) <+> (y:ys) = (x <+> y) : (xs <+> ys)
+  [] <.> _ = []
+  _ <.> [] = []
+  (x:xs) <.> (y:ys) =
+    (x <.> y) : (map (x <.>) ys <+> map (<.> y) xs <+> (zero : (xs <.> ys)))
+
+
+
+
+
+
+
+
+newtype Search a = Search [[a]] deriving Functor
+
+instance Semiring (Search a) where
+  Search xs <+> Search ys = Search (zipLong xs ys) where
+    zipLong xs [] = xs
+    zipLong [] ys = ys
+    zipLong (x:xs) (y:ys) = (x++y) : zipLong xs ys
+  Search xs <.> Search ys = Search (xs ++ ys)
+  zero = Search []
+  one = Search [[]]
+  
+instance Applicative Search where
+  pure x = Search [[x]]
+  (<*>) = ap
+
+instance Monad Search where
+  x >>= f = join (fmap f x)
+
+join :: Search (Search a) -> Search a
+join (Search []) = Search []
+join (Search (x:xs)) = add x <+> one <.> join (Search xs)

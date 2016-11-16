@@ -1,12 +1,4 @@
 -- Haskell Playground 1.0
---quickCheck (plusAssoc   :: [Int] -> [Int] -> [Int] -> Property)
---quickCheck (mulAssoc    :: [Int] -> [Int] -> [Int] -> Property)
---quickCheck (plusComm    :: [Int] -> [Int] -> Property)
---quickCheck (mulDistribL :: [Int] -> [Int] -> [Int] -> Property)
---quickCheck (mulDistribR :: [Int] -> [Int] -> [Int] -> Property)
---quickCheck (plusId      :: [Int] -> Property)
---quickCheck (mulId       :: [Int] -> Property)
+--take 3 (bfs trips)
 
---liftA2 (,) [1,2,3] [4,5,6]
-
-[1,2,3] <.> [3,4,5]
+--mappend (singleton 1) (singleton 3)

@@ -1,52 +1,88 @@
-{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveFunctor, RankNTypes #-}
 
 module Data.Semiring.Map where
-  
-import qualified Data.Map.Strict as Map
-import Data.Semiring hiding (add)
-import Data.Semiring.Free
-import Prelude hiding (lookup)
-import Data.Foldable hiding (toList)
-import Control.Applicative
-import Data.Monoid
+
 import Control.Monad
+import Control.Applicative
 
-newtype SemiringMap a b = SemiringMap
-  { getMap :: Map.Map a b
-  } deriving (Functor, Show)
+class Computation f where
+  yield :: a -> f a
+  
+class Nondet n where
+  failure :: n a
+  choice :: n a -> n a -> n a
+  
+newtype CPS c a = CPS {(>>-) :: forall b.(a -> c b) -> c b }
 
-type Map a b      = SemiringMap a (First b)
-type Set a        = SemiringMap a (Add Bool)
-type MultiMap a b = SemiringMap a [b]
-type MultiSet a   = SemiringMap a (Add Int)
+runCPS :: Computation c => CPS c a -> c a
+runCPS a = a >>- yield
 
-lookup :: (Ord a, Monoid b) => a -> SemiringMap a b -> b
-lookup x (SemiringMap xs) = fold (Map.lookup x xs)
+instance Functor (CPS c) where
+  fmap f x = x >>= (return . f)
+  
+instance Applicative (CPS c) where
+  pure = return 
+  (<*>) = ap
 
-add :: (Ord a, Semiring b) => a -> SemiringMap a b -> SemiringMap a b
-add x (SemiringMap xs) = SemiringMap (Map.insertWith (<+>) x one xs)
+instance Monad (CPS c) where
+  return x = CPS (\c -> c x)
+  a >>= f = CPS (\c -> a >>- \x -> f x >>- c)
+  
+instance Computation (CPS c) where
+  yield = return
+  
+instance Nondet n => Nondet (CPS n) where
+  failure = CPS (\_ -> failure)
+  choice a b = CPS (\c -> choice (a >>- c) (b >>- c))
+  
+newtype DiffList a = DiffList { unDiff :: [a] -> [a] }
 
-insert :: (Ord a, Monoid b) => a -> b -> SemiringMap a b -> SemiringMap a b
-insert k v (SemiringMap xs) = SemiringMap (Map.insertWith mappend k v xs)
+instance Computation DiffList where
+  yield x = DiffList (x:)
+  
+instance Nondet DiffList where
+  failure = DiffList id
+  choice (DiffList x) (DiffList y) = DiffList (x . y)
+  
+instance Nondet n => Alternative (CPS n) where
+  empty = failure
+  (<|>) = choice
 
-instance (Ord a, Monoid b) => Monoid (SemiringMap a b) where
-  mempty = SemiringMap Map.empty
-  mappend (SemiringMap xs) (SemiringMap ys) = SemiringMap (Map.unionWith mappend xs ys)
+toList :: DiffList a -> [a]
+toList (DiffList xs) = xs []
 
-delete :: Ord a => a -> SemiringMap a b -> SemiringMap a b
-delete x (SemiringMap xs) = SemiringMap (Map.delete x xs)
+backtrack :: CPS DiffList a -> [a]
+backtrack = toList . runCPS
 
-intersect :: (Ord a, Semiring b) => SemiringMap a b -> SemiringMap a b -> SemiringMap a b
-intersect (SemiringMap xs) (SemiringMap ys) = SemiringMap (Map.intersectionWith (<.>) xs ys)
+anyof :: (Foldable f, Computation n, Nondet n) => f a -> n a
+anyof = foldl (\a e -> choice (yield e) a) failure
 
-fromList :: (Ord a, Semiring b) => [a] -> SemiringMap a b
-fromList = foldr add (SemiringMap Map.empty)
+newtype Levels n a = Levels { levels :: [n a] }
 
-fromAssocs :: (Ord a, Monoid b) => [(a,b)] -> SemiringMap a b
-fromAssocs = foldr (uncurry insert) mempty
+runLevels :: Nondet n => Levels n a -> n a
+runLevels = foldr choice failure . levels
 
-toList :: (Semiring b, Enum b) => SemiringMap a b -> [a]
-toList = uncurry (flip replicate) <=< (Map.assocs . fmap fromEnum . getMap)
+levelSearch :: CPS (Levels DiffList) a -> [a]
+levelSearch = toList . runLevels . runCPS
 
-toAssocs :: Monoid b => SemiringMap a b -> [(a,b)]
-toAssocs = Map.assocs . getMap
+instance Computation n => Computation (Levels n) where
+  yield x = Levels [yield x]
+  
+instance Nondet n => Nondet (Levels n) where
+  failure = Levels []
+  choice a b = Levels (failure : merge (levels a) (levels b))
+  
+merge [] ys = ys
+merge xs [] = xs
+merge (x:xs) (y:ys) = choice x y :  merge xs ys
+
+pytriple = do
+  a <- anyof [1..]
+  b <- anyof [succ a ..]
+  c <- anyof [succ b ..]
+  guard (a*a + b*b == c*c)
+  return (a,b,c)
+
+
+
+

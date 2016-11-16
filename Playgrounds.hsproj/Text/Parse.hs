@@ -3,11 +3,13 @@
 module Text.Parse where
   
 import Data.Foldable
+import Prelude hiding (head)
 import Data.Safe
-import Data.List
+import Data.List hiding (head)
 import Data.Functor
 import Control.Applicative
 import Control.Applicative.Alternative
+
 
 newtype Parser a =
   Parser { parse :: String -> [(a, String)] 
@@ -17,12 +19,18 @@ instance Applicative Parser where
   pure x = Parser $ \s -> [(x,s)]
   Parser fs <*> Parser xs = Parser $ \s -> [ (f x, s) | (f,s) <- fs s, (x,s) <- xs s ]
   
+runParse :: Parser a -> String -> Maybe a
+runParse p = fmap fst . head . parse p
+  
 instance Alternative Parser where
   empty = mempty
   Parser x <|> Parser y = Parser ((<|>) <$> x <*> y)
   
 instance Monad Parser where
-  x >>= f = Parser $ \s -> [ (y,s) | (x,s) <- parse x s, (y,s) <- parse (f x) s ]
+  x >>= f =
+    Parser $ \s -> [ (y,s) 
+                   | (x,s) <- parse x s
+                   , (y,s) <- parse (f x) s ]
   
 anyChar :: Parser Char
 anyChar = Parser (toAlt . uncons)
@@ -51,10 +59,10 @@ digit = flip mapAlt anyChar $ \case
   _ -> Nothing
   
 natural :: Parser Int
-
 natural = foldl' (\a e -> e + a * 10) 0 <$> many digit
 
-chainl1 :: (Monad m, Alternative m) => m a -> m (a -> a -> a) -> m a
+chainl1 :: (Monad m, Alternative m)
+        => m a -> m (a -> a -> a) -> m a
 chainl1 p op = rest =<< p where
   rest x = (do
     f <- op 

@@ -1,5 +1,2 @@
 -- Haskell Playground 1.0
-"MOV AL,[BL]"
-"MOV [AL],BL"
-"ADD AL,BL"
-
+runParse (atMost 9 anyChar) "123"

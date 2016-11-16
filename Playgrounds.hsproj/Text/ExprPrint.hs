@@ -1,12 +1,12 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE LambdaCase    #-}
 
-module Text.ExprPrint
-  ( Side(..)
-  , ShowExpr(..)
-  , Operator(..)
-  , showExpr
-  ) where
+module Text.ExprPrint where
+--  ( Side(..)
+--  , ShowExpr(..)
+--  , Operator(..)
+--  , showExpr
+--  ) where
 
 import           Control.Arrow
 import           Data.Monoid
@@ -42,3 +42,6 @@ showExpr prns proj = rec . proj where
     Unary  (Operator s r _) _   -> Just (s,r)
     Binary (Operator s r _) _ _ -> Just (s,r)
 {-# INLINABLE showExpr #-}
+
+data Free f x = Free { unFree :: [FFree f x] }
+data FFree f x = Pure x | Con (f (Free f x))
