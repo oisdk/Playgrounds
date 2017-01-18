@@ -5,8 +5,8 @@ build-type: Simple
 license: MIT
 stability: experimental
 author: Donnacha Oisín Kidney
-x-ghc-framework-version: 7.10.3-5.18-1
-x-last-ide-version: HfM1.3.0
+x-ghc-framework-version: 7.10.3-5.18-2
+x-last-ide-version: HfM1.3.2
 Executable Playgrounds
   main-is: Playgrounds.hs
   buildable: True
@@ -18,12 +18,16 @@ Executable Playgrounds
       semigroups -any,
       transformers -any,
       base -any,
-      containers -any,
       QuickCheck -any,
-      lens -any,
+      containers -any,
       array -any,
-      prelude-extras -any
+      lens -any,
+      parallel -any
   other-modules:
+      Numeric.Bases
+      Numeric.Digit
+      Numeric.Small
+      Numeric.Countdown
       Assignments.HS2
       Assignments.HS4
       Assignments.HS3
@@ -55,8 +59,11 @@ Executable Playgrounds
       Data.Semiring.Numeric
       Data.Semiring.Free
       Data.Scott.List
+      Flip
+      Lifted.Free
       Text.ExprPrint
       Text.Parse
+      Type.List
       Control.Replicate
       Control.Monad.Restricted
       Control.Monad.BinOdds
@@ -72,9 +79,6 @@ Executable Playgrounds
       Control.Permute
       Control.Applicative.Alternative
       Control.Applicative.Janus
-      NewModule
-      Numeric.Bases
-      Numeric.Digit
-      Numeric.Small
-      Numeric.Countdown
       Test.Function
+      Cards
+      Free

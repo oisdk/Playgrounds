@@ -1,4 +1,3 @@
 -- Haskell Playground 1.0
-let u = uniform [1..10] :: WeightedT Integer [] Integer
+{-# LANGUAGE TypeFamilies #-}
 
-uncurry (%) (probOf (1==) (uniform [1,2] <|> uniform [1]))
