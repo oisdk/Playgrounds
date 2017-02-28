@@ -13,20 +13,15 @@ import Control.Arrow (first, second)
 import GHC.TypeLits
 import Prelude hiding (Functor(..), Applicative(..), Monad(..), length, (<$>))
 import Prelude (fail)
-import Control.Monad.Restricted
+
 
 newtype Cost (n :: Nat) a = Cost { unCost :: a }
 
-instance Functor (Cost n) a b where
-  fmap f (Cost x) = Cost (f x)
-
-instance Pointed (Cost 0) a where
-  pure = Cost
-
-instance Apply 
-
 single :: x -> Cost 1 x
 single = Cost
+
+
+return = Cost
 
 data Vec :: Nat -> * -> * where
   Nil  :: Vec 0 a
@@ -46,6 +41,9 @@ f <$> (Cost x) = Cost (f x)
 
 (<*>) :: Cost n (a -> b) -> Cost m a -> Cost (m + n) b
 Cost f <*> Cost x = Cost (f x)
+
+(>>=) :: Cost n a -> (a -> Cost m b) -> Cost (n+m) b
+(>>=) (Cost x) f = (Cost . unCost) (f x)
 
 partitionA :: (a -> Cost 1 Bool) -> Vec n a -> Cost n ([a],[a])
 partitionA f Nil = return ([], [])

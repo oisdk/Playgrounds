@@ -15,48 +15,34 @@ Executable Playgrounds
   build-depends:
       bytestring -any,
       random -any,
+      mtl -any,
       smallcheck -any,
       transformers -any,
-      QuickCheck -any,
-      parallel -any,
-      free -any,
-      mtl -any,
       semigroups -any,
       base -any,
       containers -any,
-      lens -any,
-      array -any
+      QuickCheck -any,
+      lens -any
   other-modules:
-      Numeric.Bases
-      Numeric.Digit
-      Numeric.Small
-      Numeric.Countdown
       Assignments.HS2
       Assignments.HS4
       Assignments.HS3
       Data.Semiring
-      Data.Uniques
       Data.Church.List
       Data.Church.Nat
       Data.Church.Pair
       Data.Church.Prelude
-      Data.Bool
-      Data.FancyExpr
       Data.Traversable.Extras
-      Data.ST
       Data.Deque
       Data.Safe
       Data.Functor.Recursive
-      Data.BoolSimplify
       Data.Unfold
+      Data.RList
       Data.Function.Chain
       Data.Function.Operators
       Data.Function.Utils
-      Data.RList
-      Data.Foldable.Multi
       Data.Foldable.Tricks
-      Data.Knots.Rack
-      Data.Expr
+      Data.StrictPair
       Data.Resources
       Data.Scott.List
       Data.Semiring.Map
@@ -64,24 +50,16 @@ Executable Playgrounds
       Data.Semiring.Numeric
       Data.Semiring.Free
       Flip
-      Lifted.Free
       Text.ExprPrint
       Text.Parse
       Type.List
-      Control.Permute
       Control.Applicative.Alternative
-      Control.Applicative.Janus
-      Control.Monad.Restricted
       Control.Monad.BinOdds
       Control.Monad.Church.State
       Control.Monad.Church.Writer
-      Control.Monad.Undo
-      Control.Monad.FastWriterT
-      Control.Monad.FastWriter
       Control.Monad.Complexity
-      Control.Monad.Prob
-      Control.Monad.Split
-      Control.Monad.Odds
+      Control.Monad.Undo
       Test.Function
       Cards
-      Free
+      Numeric.Small
+      Numeric.Bases

@@ -18,6 +18,3 @@ type family Head (xs :: [k]) :: k where
   
 type family Tail (xs :: [k]) :: [k] where
   Tail (x ': xs) = xs
-  
-x :: Proxy (Head '[1,2])
-x = Proxy

@@ -48,10 +48,11 @@ tail :: List a -> List a
 tail xs = L (\c n -> l xs (\h t g -> g h (t c)) (\_ -> n) (\_ x -> x))
 
 instance Semigroup (List a) where
-  xs <> ys = L (\f b -> l xs f (l ys f b))
+  xs <> ys = L (\f -> l xs f . l ys f)
 
 instance Monoid (List a) where
   mempty = nil
+  mappend = (<>)
   
 newtype Zip a b = Zip { unZip :: forall w. (a -> b -> w) -> w -> w }
 

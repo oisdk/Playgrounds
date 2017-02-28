@@ -40,13 +40,14 @@ atMost m f = go (max 0 m) where
   go 0 = pure []
   go n = liftA2 (:) f (go (n-1)) <|> pure []
 
---replicateM        :: (Applicative m) => Int -> m a -> m [a]
---{-# INLINEABLE replicateM #-}
---{-# SPECIALISE replicateM :: Int -> IO a -> IO [a] #-}
---{-# SPECIALISE replicateM :: Int -> Maybe a -> Maybe [a] #-}
---replicateM cnt0 f =
---    loop cnt0
---  where
---    loop cnt
---        | cnt <= 0  = pure []
---        | otherwise = liftA2 (:) f (loop (cnt - 1))
+replicateA        :: (Applicative m) => Int -> m a -> m [a]
+{-# INLINEABLE replicateA #-}
+{-# SPECIALISE replicateA :: Int -> IO a -> IO [a] #-}
+{-# SPECIALISE replicateA :: Int -> Maybe a -> Maybe [a] #-}
+replicateA cnt0 f =
+    loop cnt0
+  where
+    loop cnt
+        | cnt <= 0  = pure []
+        | otherwise = liftA2 (:) f (loop (cnt - 1))
+        
