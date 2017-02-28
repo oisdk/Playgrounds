@@ -23,13 +23,11 @@ get = State (State.gets head)
 put :: s -> State s ()
 put = State . State.modify . cons
 
-
 gets :: (s -> a) -> State s a
 gets f = fmap f get
 
 modify :: (s -> s) -> State s ()
 modify f = State (State.modify $ \xs -> f (head xs) <| xs)
-
 
 runState :: State s a -> s -> (a, s)
 runState (State st) = fmap head . State.runState st . pure

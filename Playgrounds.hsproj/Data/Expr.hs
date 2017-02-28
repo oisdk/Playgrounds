@@ -2,7 +2,7 @@
 
 module Data.Expr where
 
-data Peano = Zero | Succ Peano
+data Peano = Zero | Succ Peano deriving Show
 
 data Expr = Lit Peano
           | Expr :+: Expr
@@ -13,3 +13,4 @@ data Expr = Lit Peano
           | Neg Expr
           | Abs Expr
           | Sig Expr
+          deriving Show

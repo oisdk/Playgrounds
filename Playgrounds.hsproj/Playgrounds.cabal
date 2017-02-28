@@ -5,24 +5,27 @@ build-type: Simple
 license: MIT
 stability: experimental
 author: Donnacha Oisín Kidney
+data-files:
+    dict.txt
 x-ghc-framework-version: 7.10.3-5.18-2
 x-last-ide-version: HfM1.3.2
 Executable Playgrounds
   main-is: Playgrounds.hs
   buildable: True
   build-depends:
-      free -any,
+      bytestring -any,
       random -any,
-      mtl -any,
       smallcheck -any,
-      semigroups -any,
       transformers -any,
-      base -any,
       QuickCheck -any,
+      parallel -any,
+      free -any,
+      mtl -any,
+      semigroups -any,
+      base -any,
       containers -any,
-      array -any,
       lens -any,
-      parallel -any
+      array -any
   other-modules:
       Numeric.Bases
       Numeric.Digit
@@ -54,17 +57,20 @@ Executable Playgrounds
       Data.Foldable.Tricks
       Data.Knots.Rack
       Data.Expr
+      Data.Resources
+      Data.Scott.List
       Data.Semiring.Map
       Data.Semiring.Test
       Data.Semiring.Numeric
       Data.Semiring.Free
-      Data.Scott.List
       Flip
       Lifted.Free
       Text.ExprPrint
       Text.Parse
       Type.List
-      Control.Replicate
+      Control.Permute
+      Control.Applicative.Alternative
+      Control.Applicative.Janus
       Control.Monad.Restricted
       Control.Monad.BinOdds
       Control.Monad.Church.State
@@ -76,9 +82,6 @@ Executable Playgrounds
       Control.Monad.Prob
       Control.Monad.Split
       Control.Monad.Odds
-      Control.Permute
-      Control.Applicative.Alternative
-      Control.Applicative.Janus
       Test.Function
       Cards
       Free

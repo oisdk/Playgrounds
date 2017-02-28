@@ -1,5 +1,6 @@
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RankNTypes       #-}
 {-# LANGUAGE RebindableSyntax #-}
+{-# LANGUAGE UnicodeSyntax    #-}
 
 module Data.Church.Prelude
   ( module P
@@ -62,7 +63,7 @@ instance Eq Int where
     NonChurch.True -> true
     NonChurch.False -> false
 
-newtype Bool = B { ifThenElse :: forall a. a -> a -> a }
+newtype Bool = B { ifThenElse :: ∀ a. a -> a -> a }
 
 not :: Bool -> Bool
 not (B x) = B (flip x)
@@ -80,7 +81,7 @@ class Eq a where
 instance Eq Bool where
   B x == B y = B $ \t f -> x (y t f) (y f t)
 
-newtype Ordering = O { comp :: forall a. a -> a -> a -> a }
+newtype Ordering = O { comp :: ∀ a. a -> a -> a -> a }
 
 instance Show Ordering where
   show o = comp o "LT" "EQ" "GT"
@@ -119,7 +120,7 @@ true, false :: Bool
 true  = B (\t _ -> t)
 false = B (\_ f -> f)
 
-newtype Maybe a = M { m :: forall b. b -> (a -> b) -> b }
+newtype Maybe a = M { m :: ∀ b. b -> (a -> b) -> b }
 
 nothing :: Maybe a
 nothing = M (\d _ -> d)

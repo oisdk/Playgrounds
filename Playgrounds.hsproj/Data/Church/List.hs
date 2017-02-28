@@ -47,7 +47,7 @@ head xs = l xs (\e _ -> just e) nothing
 tail :: List a -> List a
 tail xs = L (\c n -> l xs (\h t g -> g h (t c)) (\_ -> n) (\_ x -> x))
 
-instance SemiGroup (List a) where
+instance Semigroup (List a) where
   xs <> ys = L (\f b -> l xs f (l ys f b))
 
 instance Monoid (List a) where
