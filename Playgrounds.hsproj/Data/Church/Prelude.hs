@@ -46,7 +46,8 @@ import Prelude as P
   , Integer
   , Int
   , Enum(..)
-  , Num(..) )
+  , Num(..)
+  , undefined )
 
 import qualified Prelude as NonChurch
 import Data.Function

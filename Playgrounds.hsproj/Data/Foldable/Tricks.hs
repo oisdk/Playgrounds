@@ -54,4 +54,4 @@ foldr2 :: (Foldable f, Foldable g) => (a -> b -> c -> c) -> c -> f a -> g b -> c
 foldr2 f b xs ys = l2 f b (toFold' xs) (toFold ys)
 
 zipWith :: (Foldable f, Foldable g) => (a -> b -> c) -> f a -> g b -> [c]
-zipWith c xs ys = build (\cons nil -> foldr2 (\x y -> cons (c x y)) nil xs ys) 
+zipWith c xs ys = build (\cons nil -> foldr2 (\x y -> cons (c x y)) nil xs ys)
