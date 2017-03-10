@@ -1,4 +1,4 @@
-{-# language GeneralizedNewtypeDeriving, DeriveFunctor, LambdaCase #-}
+{-# language GeneralizedNewtypeDeriving, DeriveFunctor, LambdaCase, RecursiveDo #-}
 
 module Text.Parse where
   
@@ -9,7 +9,12 @@ import Data.List hiding (head)
 import Data.Functor
 import Control.Applicative
 import Control.Applicative.Alternative
-
+import Control.Monad
+import Control.Monad.Fix
+import Data.Map (Map)
+import qualified Data.Map as Map
+import Data.Either
+import Data.Maybe
 
 newtype Parser a =
   Parser { parse :: String -> [(a, String)] 
@@ -23,14 +28,19 @@ runParse :: Parser a -> String -> Maybe a
 runParse p = fmap fst . head . parse p
   
 instance Alternative Parser where
-  empty = mempty
-  Parser x <|> Parser y = Parser ((<|>) <$> x <*> y)
+  empty = Parser (\_ -> [])
+  Parser x <|> Parser y = Parser (\s -> x s ++ y s)
   
 instance Monad Parser where
   x >>= f =
     Parser $ \s -> [ (y,s) 
                    | (x,s) <- parse x s
                    , (y,s) <- parse (f x) s ]
+
+instance MonadPlus Parser
+
+instance MonadFix Parser where
+  mfix f = Parser (mfix . flip (parse . f . fst))
   
 anyChar :: Parser Char
 anyChar = Parser (toAlt . uncons)
@@ -40,6 +50,23 @@ satisfies p = afilter p anyChar
 
 oneOf :: String -> Parser Char
 oneOf chrs = satisfies (`elem` chrs)
+
+lowercase :: Parser Char
+lowercase = oneOf "abcdefghijklmnopqrstuvwxyz"
+
+label :: Parser (Char, Int)
+label = token (token (satisfies (':'==)) *> ((,) <$> token lowercase <*> token natural))
+
+jump :: Map Char Int -> Parser (Maybe Int)
+jump m = token $ do
+  c <- token lowercase
+  pure (Map.lookup c m)
+
+lang :: Parser [Int]
+lang = mdo
+  (lbls, jmps) <- fmap partitionEithers (many (eitherA label (jump m)))
+  let m = Map.fromList lbls
+  return (catMaybes jmps)
 
 wspace :: Parser ()
 wspace = (void . many . oneOf) " \t\n\r"
@@ -59,7 +86,7 @@ digit = flip mapAlt anyChar $ \case
   _ -> Nothing
   
 natural :: Parser Int
-natural = foldl' (\a e -> e + a * 10) 0 <$> many digit
+natural = foldl' (\a e -> e + a * 10) 0 <$> some digit
 
 chainl1 :: (Monad m, Alternative m)
         => m a -> m (a -> a -> a) -> m a

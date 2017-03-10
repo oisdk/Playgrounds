@@ -11,7 +11,7 @@ import Control.Monad
 --
 -- prop> \(Blind p) xs -> filter p xs === afilter p xs
 afilter :: (Monad m, Alternative m) => (a -> Bool) -> m a -> m a
-afilter p = (=<<) (\x -> bool (pure x) empty (p x))
+afilter p = (=<<) (\x -> bool empty (pure x) (p x))
 
 -- | 'ensure' allows you to attach a condition to something
 ensure :: (Alternative f) => (a -> Bool) -> a -> f a

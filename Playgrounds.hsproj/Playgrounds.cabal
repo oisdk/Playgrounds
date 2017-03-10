@@ -16,13 +16,13 @@ Executable Playgrounds
       bytestring -any,
       random -any,
       mtl -any,
-      smallcheck -any,
-      transformers -any,
       semigroups -any,
+      transformers -any,
       base -any,
       containers -any,
       QuickCheck -any,
-      lens -any
+      lens -any,
+      mmorph -any
   other-modules:
       Assignments.HS2
       Assignments.HS4
@@ -49,15 +49,18 @@ Executable Playgrounds
       Data.Semiring.Test
       Data.Semiring.Numeric
       Data.Semiring.Free
+      Debug
       Flip
       Text.ExprPrint
       Text.Parse
       Type.List
       Control.Applicative.Alternative
-      Control.Monad.BinOdds
+      Control.Monad.Complexity
       Control.Monad.Church.State
       Control.Monad.Church.Writer
-      Control.Monad.Complexity
+      Control.Monad.Tardis
+      Control.Monad.Prob.Tree
+      Control.Monad.Private
       Control.Monad.Undo
       Test.Function
       Cards

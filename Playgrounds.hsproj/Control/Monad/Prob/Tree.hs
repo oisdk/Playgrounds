@@ -1,17 +1,21 @@
 {-# LANGUAGE BangPatterns, PatternSynonyms, ViewPatterns, DeriveFunctor, DeriveFoldable #-}
+{-# OPTIONS_GHC -fno-defer-type-errors #-}
 
-module Control.Monad.BinOdds where
+module Control.Monad.Prob.Tree where
 
 import Data.Bool
 import Data.Foldable
 import qualified Data.Map.Strict as Map
 import Data.Semiring
 import Data.Semiring.Numeric
+import System.Random
+import Data.Ratio
+import Control.Arrow ((&&&))
+import Control.Monad.State
 
-data Ratio o = o :%: o deriving (Eq, Ord, Functor, Foldable, Show)
-
-unRat :: Fractional a => Ratio a -> a
-unRat (n :%: d) = n / d
+pattern (:%:) :: () => Integral a => a -> a -> Ratio a
+pattern x :%: y <- (numerator &&& denominator -> (x,y)) where
+  x :%: y = x % y
 
 data Odds o a = Certain a
               | Choice (Odds o a) (Ratio o) (Odds o a)
@@ -28,7 +32,7 @@ unfoldOdds f = r where
     Left a -> Certain a
     Right (x,p,y) -> Choice (r x) p (r y)
 
-probOf :: (Eq a, Semiring o) => a -> Odds o a -> Ratio o
+probOf :: (Eq a, Semiring o, Integral o) => a -> Odds o a -> Ratio o
 probOf e = foldOdds f b where
   b x = bool one zero (e == x) :%: one
   f (xn:%:xd) (n:%:d) (yn:%:yd) = ((xn<.>yd<.>n) <+> (xd<.>yn<.>d)) :%: (xd <.> yd <.> (n <+> d))
@@ -38,7 +42,7 @@ conv' 0 = zero
 conv' 1 = one
 conv' n = one <+> conv' (n-1)
 
-fromListOdds :: (([b], Int) -> o) -> (b -> a) -> [b] -> Maybe (Odds o a)
+fromListOdds :: Integral o => (([b], Int) -> o) -> (b -> a) -> [b] -> Maybe (Odds o a)
 fromListOdds fr e = r where
   r [] = Nothing
   r xs = Just (unfoldOdds f (xs, length xs))
@@ -48,10 +52,10 @@ fromListOdds fr e = r where
     r = n - l
     (ys,zs) = splitAt l xs
 
-equalOdds :: Semiring o => [a] -> Maybe (Odds o a)
+equalOdds :: (Semiring o, Integral o) => [a] -> Maybe (Odds o a)
 equalOdds = fromListOdds (conv' . snd) id
 
-fromDistrib :: Semiring o => [(a,o)] -> Maybe (Odds o a)
+fromDistrib :: (Semiring o, Integral o) => [(a,o)] -> Maybe (Odds o a)
 fromDistrib = fromListOdds (add . map snd . fst) fst
 
 flatten :: Odds o (Odds o a) -> Odds o a
@@ -60,9 +64,19 @@ flatten = foldOdds Choice id
 instance Applicative (Odds o) where
   pure = Certain
   fs <*> xs = flatten (fmap (<$> xs) fs)
-  
+
 instance Monad (Odds o) where
   x >>= f = flatten (f <$> x)
+  
+sample :: (Integral o, Random o, Ord o, RandomGen g) => Odds o a -> g -> (a, g)
+sample = runState . foldOdds (\x (n:%:d) y -> bool y x . (n>) =<< state (randomR (0,d))) pure
+
+  
+
+
+--  go (Certain x) = pure x
+--  go (Choice x (n:%:d) y) =
+--    go . bool y x . (n>) =<< state (randomR (0,d))
   
 --lcd :: Foldable f => f Rational -> Integer
 --lcd = foldl' (\a e -> lcm a (denominator e)) 1

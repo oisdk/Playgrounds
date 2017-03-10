@@ -1,110 +1,101 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE GADTs, PolyKinds, DataKinds, TypeOperators, TypeFamilies, UndecidableInstances, RankNTypes, MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, ExistentialQuantification, FlexibleContexts, ScopedTypeVariables, RankNTypes, ConstraintKinds, DeriveFunctor #-}
 
-import Data.Semiring
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as Map
+import Data.Ratio
+import Prelude hiding (Either(..)) -- hiding (Functor(..), Applicative(..), (<$>))
+import qualified Prelude
+import GHC.Exts
 
-import Data.Map (Map)
+newtype Prob s a = Prob { runProb :: [(a,s)] } deriving Prelude.Functor
 
-import qualified Data.Map as Map
+class Functor f where
+--  type Suitable f a :: Constraint
+--  fmap :: Suitable f b => (a -> b) -> f a -> f b
+--  
+--class Functor f => Applicative f where
+--  lower :: Suitable f a => Free f a -> f a
 
-newtype SemiringMap a s = SemiringMap 
-  { runSemiringMap :: Map a s 
-  } deriving (Foldable, Functor)
+instance Num s => Prelude.Applicative (Prob s) where
+  pure x = Prob [(x,1)]
+  Prob fs <*> Prob xs
+    = Prob
+    [ (f x, fp * xp)
+    | (f,fp) <- fs
+    , (x,xp) <- xs]
+
+newtype Reified s a = Reified { runReified :: Map a s }
+
+data Free f xs a where
+  Pure :: a -> Free 'Empty f a
+  Ap :: Free xs f (b -> a) -> f ys b -> Free (Node ys b xs) f a
   
-scale :: Semiring s => s -> SemiringMap a s -> SemiringMap a s
-scale = fmap . (<.>)
+data Tree a = Empty | Node (Tree a) a (Tree a)
 
-instance (Ord a, Semiring s) => Monoid (SemiringMap a s) where
-  mappend (SemiringMap xs) (SemiringMap ys) = SemiringMap (Map.unionWith (<+>) xs ys)
-  mempty = SemiringMap mempty
+data Memo f xs a
+  = Memo
+  { run :: f a
+  , cmp :: Free xs (Memo f) a }
   
-intersection :: (Ord a, Semiring s) => SemiringMap a s -> SemiringMap a s -> SemiringMap a s
-intersection (SemiringMap xs) (SemiringMap ys) = SemiringMap (Map.intersectionWith (<.>) xs ys)
+data Elem (x :: k) (xs :: Tree k) :: * where
+  Here :: Elem x (Node xs x ys)
+  Left :: Elem x xs -> Elem x (Node xs y ys)
+  Right :: Elem x ys -> Elem x (Node xs y ys)
+  
+back :: Num s => (forall a. f a -> (a -> s)) -> Elem x xs -> Memo f xs a -> f x
+back t prf (Memo r c) = go t prf c r where
+  go :: (forall a. f a -> (a -> s)) -> Elem x xs -> Free xs (Memo f) a -> f a -> f x
+  go t Here (Ap _ xs) _ = run xs
+  go t (Left prf) (Ap _ xs) _ = back t prf xs
+--  go (Right prf) (Ap f _) _ = 
+    
+--instance Functor f => Functor (Memo f) where
+--  fmap f (Memo r c) = 
 
-type State = Int
+--instance Prelude.Functor (Free f) where
+--  fmap f (Pure a) = Pure (f a)
+--  fmap f (Ap x y) = Ap ((f .) Prelude.<$> x) y
+--
+--instance Prelude.Applicative (Free f) where
+--  pure = Pure
+--  Pure f <*> y = Prelude.fmap f y
+--  Ap x y <*> z = Ap (flip Prelude.<$> x Prelude.<*> z) y
+--
+--data Graph f a
+--  = Graph
+--  { comp :: Free (Graph f) a
+--  , infer :: f a }
+--
+--instance Functor f => Functor (Graph f) where
+--  type Suitable (Graph f) a = Suitable f a
+--  fmap f g = Graph (fmap f (comp
+--
+--reify :: (Num s, Ord a) => Prob s a -> Reified s a
+--reify = Reified . Map.fromListWith (+) . runProb
+--
+--reflect :: Reified s a -> Prob s a
+--reflect = Prob . Map.toList . runReified
+--
+--runAp :: Prelude.Applicative g => (forall x. f x -> g x) -> Free f a -> g a
+--runAp u (Pure x) = Prelude.pure x
+--runAp u (Ap f x) = runAp u f Prelude.<*> u x
+--
+--runApC :: (forall x. f x -> g x) -> Free f a -> Free g a
+--runApC u (Pure x) = Pure x
+--runApC u (Ap f x) = Ap (runApC u f) (u x)
+--
+--
+--runInfer :: Ord a => Free (Reified Rational) a -> Reified Rational a
+--runInfer = reify . runAp reflect
 
--- Simple NFA
-data Regex s i = Regex
-    { numberOfStates     :: Int
-    , startingStates     :: SemiringMap State s
-    , transitionFunction :: i -> State -> SemiringMap State s
-    , acceptingStates    :: SemiringMap State s
-    }
 
-satisfy :: Semiring s => (i -> s) -> Regex s i
-satisfy predicate = Regex n as f bs
-  where
-    n  = 2
-    as = SemiringMap (Map.singleton 0 one)
-    bs = SemiringMap (Map.singleton 1 one)
+--die :: FactorGraph (Reified Rational) Integer
+--die 
+--  = lift (Graph die ((Reified . Map.fromList) [(1,1/6),(2,1/6),(3,1/6),(4,1/6),(5,1/6),(6,1/6)]))
+--  
+--infer' 
+--
+--lift :: f a -> Free f a
+--lift = Ap (Pure id)
+--
 
-    f i 0 = SemiringMap (Map.singleton 1 (predicate i))
-    f _ _ = SemiringMap Map.empty
-
-once :: Eq i => i -> Regex Bool i
-once x = satisfy (== x)
-
-dot :: Regex Bool i
-dot = satisfy (\_ -> True)
-
-match :: Semiring s => Regex s i -> [i] -> s
-match (Regex _ as _ bs)  []    = add (intersection as bs)
-match (Regex n (SemiringMap as) f bs) (i:is) = match (Regex n as' f bs) is
-  where
-    as' = Map.foldMapWithKey (\k e -> scale e (f i k))  as
-      
-shift :: Int -> SemiringMap State s -> SemiringMap State s
-shift n (SemiringMap xs) = SemiringMap (Map.mapKeys (+n) xs)
-
-class Semiring s => DetectableZero s where
-  isZero :: s -> Bool
-
-instance DetectableZero Bool where isZero = not
-
-snull :: DetectableZero s => SemiringMap a s -> Bool
-snull = isZero . add
-
-instance DetectableZero s => Semiring (Regex s i) where
-    -- The regular expression that never matches anything
-    zero = Regex n as f bs
-      where
-        n  = 0
-        as = mempty
-        bs = mempty
-        f _ _ = mempty
-
-    -- "ε": the regular expression that matches the empty string
-    one = Regex n as f bs
-      where
-        n  = 1
-        as = SemiringMap (Map.singleton 0 one)
-        bs = SemiringMap (Map.singleton 0 one)
-        f _ _ = mempty
-
-    Regex nL asL fL bsL <+> Regex nR asR fR bsR = Regex n as f bs
-      where
-        n  = nL + nR
-        as = mappend asL (shift nL asR)
-        bs = mappend bsL (shift nL bsR)
-        f i s | s < nL    = fL i s
-              | otherwise = shift nL (fR i (s - nL))
-
-    Regex nL asL fL bsL <.> Regex nR asR fR bsR = Regex n as f bs
-      where
-        n = nL + nR
-
-        as =
-            if snull (intersection asL bsL)
-            then           asL
-            else mappend asL (shift nL asR)
-
-        f i s =
-            if s < nL
-            then if snull (intersection r bsL)
-                 then           r
-                 else mappend r (shift nL asR)
-            else shift nL (fR i (s - nL))
-          where
-            r = fL i s
-
-        bs = shift nL bsR
-        

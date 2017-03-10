@@ -1,15 +1,15 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE LambdaCase    #-}
 
-module Text.ExprPrint where
---  ( Side(..)
---  , ShowExpr(..)
---  , Operator(..)
---  , showExpr
---  ) where
+module Text.ExprPrint
+  ( Side(..)
+  , ShowExpr(..)
+  , Operator(..)
+  , showExpr
+  ) where
 
 import           Control.Arrow
-import           Data.Monoid
+import           Data.Semigroup
 
 data Side = L | R deriving Eq
 
@@ -24,7 +24,7 @@ data Operator t = Operator
   , _precedence     :: Int
   , _representation :: t }
 
-showExpr :: Monoid t
+showExpr :: Semigroup t
          => (t -> t)
          -> (e -> ShowExpr t e)
          -> e -> t
@@ -42,6 +42,3 @@ showExpr prns proj = rec . proj where
     Unary  (Operator s r _) _   -> Just (s,r)
     Binary (Operator s r _) _ _ -> Just (s,r)
 {-# INLINABLE showExpr #-}
-
-data Free f x = Free { unFree :: [FFree f x] }
-data FFree f x = Pure x | Con (f (Free f x))

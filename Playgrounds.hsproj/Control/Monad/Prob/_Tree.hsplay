@@ -1,0 +1,21 @@
+-- Haskell Playground 1.0
+{-# OPTIONS_GHC -fno-defer-type-errors #-}
+
+let Just xs = fromDistrib [('a',1),('b',2)]
+
+
+
+--replicateM 10000 (getStdRandom (sample xs)) >>= (\xs -> print $ fromIntegral (length (filter ('a'==) xs)) / fromIntegral (length (filter ('b'==) xs)))
+
+bool 1 0 True
+
+--getStdRandom (sample xs)
+
+
+--getStdRandom (sample xs)
+--
+--getStdRandom (runState (go xs))
+
+let t = sample xs :: (StdGen -> (Char, StdGen))
+
+getStdRandom t

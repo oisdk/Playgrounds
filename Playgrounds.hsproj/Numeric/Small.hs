@@ -1,188 +1,203 @@
-{-# LANGUAGE KindSignatures, DataKinds #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE KindSignatures        #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
 
 module Numeric.Small where
   
-import Data.Monoid
-import Data.Bits
-import Data.Proxy
-import Data.Int
-import Test.SmallCheck.Series
-import Data.Coerce
-import GHC.TypeLits
-import Data.Word
-import Data.Function
-import Data.Ord
+import           Data.Bits
+import           Data.Coerce
+import           Data.Function
+import           Data.Proxy
+import           GHC.Generics
+import           GHC.TypeLits
+import           Numeric.Natural
 
-data Size = O | S Size
+newtype IntOfSize (n :: Nat) = IntOfSize
+    { getIntOfSize :: Integer
+    } deriving (Generic)
 
-newtype WordN (n :: Size) = WordN 
-  { getWord :: Integer }
+instance KnownNat n =>
+         Bounded (IntOfSize n) where
+    minBound = let n = IntOfSize (shift (-1) (fromInteger (natVal (Proxy :: Proxy n) - 1))) in n
+    maxBound =  IntOfSize (shift 1 (fromInteger (natVal (Proxy :: Proxy n) - 1)) - 1)
 
-newtype IntN (n :: Size) = IntN 
-  { getInt :: Integer }
+type CoerceBinary a b = (a -> a -> a) -> (b -> b -> b)
 
-class Coercible n Integer => BitAlias n where
-  mask  :: n -> Integer
-  trunc :: n -> n
+instance KnownNat n =>
+         Bits (IntOfSize n) where
+    (.&.) = (coerce :: CoerceBinary Integer (IntOfSize n)) (.&.)
+    (.|.) = (coerce :: CoerceBinary Integer (IntOfSize n)) (.|.)
+    xor = trunc .: (coerce :: CoerceBinary Integer (IntOfSize n)) xor
+    complement =
+        trunc . (coerce :: (Integer -> Integer) -> IntOfSize n -> IntOfSize n) complement
+    shift =
+        trunc .:
+        (coerce :: (Integer -> Int -> Integer) -> IntOfSize n -> Int -> IntOfSize n)
+            shift
+    rotate =
+        trunc .:
+        (coerce :: (Integer -> Int -> Integer) -> IntOfSize n -> Int -> IntOfSize n)
+            rotate
+    bit = trunc . IntOfSize . bit
+    bitSize = fromInteger . natVal
+    bitSizeMaybe = Just . fromInteger . natVal
+    isSigned _ = True
+    testBit =
+        (coerce :: (Integer -> Int -> Bool) -> IntOfSize n -> Int -> Bool)
+            testBit
+    popCount =
+        (coerce :: (Integer -> Int) -> IntOfSize n -> Int) popCount
 
-coerceBinary :: Coercible a b => (a -> a -> a) -> b -> b -> b
-coerceBinary = coerce
+trunc
+    :: KnownNat n
+    => IntOfSize n -> IntOfSize n
+trunc x
+  | testBit x (fromInteger (natVal x) - 1) = x .|. minBound
+  | otherwise = x .&. maxBound
 
-coerceUnary :: Coercible a b => (a -> a) -> b -> b
-coerceUnary = coerce
+convBinary
+    :: KnownNat n
+    => CoerceBinary Integer (IntOfSize n)
+convBinary f = trunc .: coerce f
 
-convBinary :: BitAlias n => (Integer -> Integer -> Integer) -> n -> n -> n
-convBinary f = trunc .: coerceBinary f
+instance KnownNat n =>
+         Num (IntOfSize n) where
+    (+) = convBinary (+)
+    (*) = convBinary (*)
+    negate y = complement y + 1
+    fromInteger = trunc . IntOfSize . fromInteger
+    abs = id
+    signum (IntOfSize x) = IntOfSize (signum x)
 
-(.:) = (.).(.)
+instance KnownNat n =>
+         Eq (IntOfSize n) where
+    (==) = (==) `on` getIntOfSize . trunc
 
-convUnary :: BitAlias n => (Integer -> Integer) -> n -> n
-convUnary f = trunc . coerceUnary f
+instance KnownNat n =>
+         Ord (IntOfSize n) where
+    compare = compare `on` getIntOfSize . trunc
 
-instance BitAlias (WordN O) where
-  mask _ = 0
-  {-# INLINE mask #-}
-  trunc x = coerceUnary (mask x .&.) x
-  {-# INLINE trunc #-}
-  
-instance BitAlias (WordN s) => BitAlias (WordN (S s)) where
-  mask x = smask x undefined where
-    smask :: BitAlias (WordN s) => WordN (S s) -> WordN s -> Integer
-    smask _ y = setBit (shiftL (mask y) 1) 0
-    {-# INLINE smask #-}
-  {-# INLINE mask #-}
-  trunc x = coerceUnary (mask x .&.) x
-  {-# INLINE trunc #-}
-  
-instance BitAlias (IntN O) where
-  mask _ = 0
-  {-# INLINE mask #-}
-  trunc x = coerceUnary (mask x .&.) x
-  {-# INLINE trunc #-}
+instance KnownNat n =>
+         Real (IntOfSize n) where
+    toRational = toRational . getIntOfSize
 
-instance BitAlias (IntN s) => BitAlias (IntN (S s)) where
-  mask x = smask x undefined where
-    smask :: BitAlias (IntN s) => IntN (S s) -> IntN s -> Integer
-    smask _ y = setBit (shiftL (mask y) 1) 0
-    {-# INLINE smask #-}
-  {-# INLINE mask #-}
-  trunc x = coerceUnary (mask x .&.) x
-  {-# INLINE trunc #-}
+instance KnownNat n =>
+         Enum (IntOfSize n) where
+    fromEnum = fromEnum . getIntOfSize
+    toEnum = trunc . IntOfSize . toEnum
+    enumFrom x = [x .. maxBound]
 
-instance Bounded (WordN O) where
-  minBound = WordN 0
-  {-# INLINE minBound #-}
-  maxBound = WordN 1
-  {-# INLINE maxBound #-}
-  
-instance BitAlias (WordN b) => Bounded (WordN (S b)) where
-  minBound = WordN 0
-  {-# INLINE minBound #-}
-  maxBound = x where x = WordN (mask x)
-  {-# INLINE maxBound #-}
+instance KnownNat n =>
+         Integral (IntOfSize n) where
+    toInteger = toInteger . getIntOfSize
+    quotRem x y = (convBinary quot x y, convBinary rem x y)
 
-instance Num (WordN O) where
-  (+) = convBinary (+)
-  {-# INLINE (+) #-}
-  (*) = convBinary (*)
-  {-# INLINE (*) #-}
-  (-) = convBinary (-)
-  {-# INLINE (-) #-}
-  abs = convUnary abs
-  {-# INLINE abs #-}
-  signum = convUnary signum
-  {-# INLINE signum #-}
-  fromInteger = trunc . WordN
-  {-# INLINE fromInteger #-}
+(.:) :: (c -> d) -> (a -> b -> c) -> a -> b -> d
+(.:) = (.) . (.)
 
-instance BitAlias (WordN s) => Num (WordN (S s)) where
-  (+) = convBinary (+)
-  {-# INLINE (+) #-}
-  (*) = convBinary (*)
-  {-# INLINE (*) #-}
-  (-) = convBinary (-)
-  {-# INLINE (-) #-}
-  abs = convUnary abs
-  {-# INLINE abs #-}
-  signum = convUnary signum
-  {-# INLINE signum #-}
-  fromInteger = trunc . WordN
-  {-# INLINE fromInteger #-}
+instance KnownNat n =>
+         FiniteBits (IntOfSize n) where
+    finiteBitSize = fromInteger . natVal
 
-instance Enum (WordN O) where
-  toEnum = trunc . WordN . toEnum
-  fromEnum = fromEnum . getWord
+allIntsOfSize
+    :: KnownNat n
+    => [IntOfSize n]
+allIntsOfSize = f [0 .. maxBound ] (drop 1 [0,-1 .. minBound])
+  where
+    f (x:xs) ys = x : f ys xs
+    f [] ys = ys
 
-instance BitAlias (WordN s) => Enum (WordN (S s)) where
-  toEnum = trunc . WordN . toEnum
-  fromEnum = fromEnum . getWord
+instance KnownNat n =>
+         Show (IntOfSize n) where
+    showsPrec n = showsPrec n . getIntOfSize . trunc
 
-instance Show (WordN s) where
-  show = show . getWord
+newtype WordOfSize (n :: Nat) = WordOfSize
+    { getWordOfSize :: Natural
+    } deriving (Generic)
 
-instance Show (IntN s) where
-  show = show . getInt
-  
-instance Eq (WordN O) where
-  (==) = (==) `on` getWord . trunc
-  
-instance BitAlias (WordN s) => Eq (WordN (S s)) where
-  (==) = (==) `on` getWord . trunc
-  
-instance Ord (WordN O) where
-  compare = comparing (getWord.trunc)
-  
-instance BitAlias (WordN s) => Ord (WordN (S s)) where
-  compare = comparing (getWord.trunc)
-  
-instance Monad m => Serial m (WordN O) where
-  series = generate $ \d -> take d [minBound..maxBound]
-  
-instance (Monad m, BitAlias (WordN s)) => Serial m (WordN (S s)) where
-  series = generate $ \d -> take d [minBound..maxBound]
+instance KnownNat n =>
+         Bounded (WordOfSize n) where
+    minBound = WordOfSize 0
+    maxBound = WordOfSize (shift 1 (fromInteger (natVal (Proxy :: Proxy n))) - 1)
 
-type family WordS (n :: Nat) :: *
-type instance WordS 1 = WordN O
-type instance WordS 2 = WordN (S (S O))
-type instance WordS 3 = WordN (S (S (S O)))
-type instance WordS 4 = WordN (S (S (S (S O))))
-type instance WordS 5 = WordN (S (S (S (S (S O)))))
-type instance WordS 6 = WordN (S (S (S (S (S (S O))))))
-type instance WordS 7 = WordN (S (S (S (S (S (S (S O)))))))
+instance KnownNat n =>
+         Bits (WordOfSize n) where
+    (.&.) = (coerce :: CoerceBinary Natural (WordOfSize n)) (.&.)
+    (.|.) = (coerce :: CoerceBinary Natural (WordOfSize n)) (.|.)
+    xor = truncW .: (coerce :: CoerceBinary Natural (WordOfSize n)) xor
+    complement =
+        truncW . (coerce :: (Natural -> Natural) -> WordOfSize n -> WordOfSize n) complement
+    shift =
+        truncW .:
+        (coerce :: (Natural -> Int -> Natural) -> WordOfSize n -> Int -> WordOfSize n)
+            shift
+    rotate =
+        truncW .:
+        (coerce :: (Natural -> Int -> Natural) -> WordOfSize n -> Int -> WordOfSize n)
+            rotate
+    bit = truncW . WordOfSize . bit
+    bitSize = fromInteger . natVal
+    bitSizeMaybe = Just . fromInteger . natVal
+    isSigned _ = False
+    testBit =
+        (coerce :: (Natural -> Int -> Bool) -> WordOfSize n -> Int -> Bool)
+            testBit
+    popCount =
+        (coerce :: (Natural -> Int) -> WordOfSize n -> Int) popCount
 
-type Word1 = WordS 1
-type Word2 = WordS 2
-type Word3 = WordS 3
-type Word4 = WordS 4
-type Word5 = WordS 5
-type Word6 = WordS 6
-type Word7 = WordS 7
+truncW
+    :: KnownNat n
+    => WordOfSize n -> WordOfSize n
+truncW = (.&.) maxBound
 
-type family IntS (n :: Nat) :: *
-type instance IntS 1 = IntN O
-type instance IntS 2 = IntN (S (S O))
-type instance IntS 3 = IntN (S (S (S O)))
-type instance IntS 4 = IntN (S (S (S (S O))))
-type instance IntS 5 = IntN (S (S (S (S (S O)))))
-type instance IntS 6 = IntN (S (S (S (S (S (S O))))))
-type instance IntS 7 = IntN (S (S (S (S (S (S (S O)))))))
+convBinaryW
+    :: KnownNat n
+    => CoerceBinary Natural (WordOfSize n)
+convBinaryW f = truncW .: coerce f
 
+instance KnownNat n =>
+         Num (WordOfSize n) where
+    (+) = convBinaryW (+)
+    (*) = convBinaryW (*)
+    negate y = (maxBound `xor` y) + 1
+    fromInteger = truncW . WordOfSize . fromInteger
+    abs = id
+    signum (WordOfSize x) = WordOfSize (signum x)
 
-type Int1 = IntS 1
-type Int2 = IntS 2
-type Int3 = IntS 3
-type Int4 = IntS 4
-type Int5 = IntS 5
-type Int6 = IntS 6
-type Int7 = IntS 7
+instance KnownNat n =>
+         Eq (WordOfSize n) where
+    (==) = (==) `on` getWordOfSize . truncW
+
+instance KnownNat n =>
+         Show (WordOfSize n) where
+    showsPrec n = showsPrec n . getWordOfSize . truncW
+
+instance KnownNat n =>
+         Ord (WordOfSize n) where
+    compare = compare `on` getWordOfSize . truncW
+
+instance KnownNat n =>
+         Real (WordOfSize n) where
+    toRational = toRational . getWordOfSize
+
+instance KnownNat n =>
+         Enum (WordOfSize n) where
+    fromEnum = fromEnum . getWordOfSize
+    toEnum = truncW . WordOfSize . toEnum
+    enumFrom x = [x .. maxBound]
+
+instance KnownNat n =>
+         Integral (WordOfSize n) where
+    toInteger = toInteger . getWordOfSize
+    quotRem x y = (convBinaryW quot x y, convBinaryW rem x y)
 
 
+instance KnownNat n =>
+         FiniteBits (WordOfSize n) where
+    finiteBitSize = fromInteger . natVal
 
+allWordsOfSize
+    :: KnownNat n
+    => [WordOfSize n]
+allWordsOfSize = [minBound .. maxBound]

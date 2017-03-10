@@ -1,2 +1,2 @@
 -- Haskell Playground 1.0
-runParse (atMost 9 anyChar) "123"
+head $ parse lang ":a 2 a b :b 6 b a"

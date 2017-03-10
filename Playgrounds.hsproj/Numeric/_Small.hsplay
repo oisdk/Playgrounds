@@ -1,33 +1,14 @@
 -- Haskell Playground 1.0
 {-# LANGUAGE DataKinds #-}
 
-let f n = [ if testBit n i then '1' else '0' | i <- [0..] ]
---
---maxBound :: Int7
---maxBound :: Word8
---
+let x = 4 :: IntOfSize 4
 
+let y = x + 3
+y * 10
 
+y + 5
 
-----list 100 series :: [Int3]
---
---[minBound..maxBound] :: [Int3]
---
---maxBound :: Int3
---minBound :: Int3
---f (-2)
---getInt (minBound :: Int3) .&. (-4)
---f (-4)
---mask (undefined :: Int3)
---f (mask (undefined :: Int3))
+y
+y * 10
 
-
---mapM_ putStrLn ([ take 10 (f i) | i <- [-5..5] ])
-
-
-let t = trunc . IntN :: Integer -> Int3
-
-[minBound..maxBound] :: [Word3]
-
-
-5 :: Word3
+y + 9
