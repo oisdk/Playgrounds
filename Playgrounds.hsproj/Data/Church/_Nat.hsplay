@@ -2,3 +2,5 @@
 {-# LANGUAGE RebindableSyntax #-}
 
 showN (5 ^ 2)
+
+showB ((inf ) <= 100)

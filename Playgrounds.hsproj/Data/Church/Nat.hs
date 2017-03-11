@@ -81,3 +81,6 @@ infixl 7 /
 divide1 :: Nat -> Nat -> Nat
 divide1 = fix (\d1 n m f x -> (\(WrapNat d) -> isZero d (0 f x) (f (d1 d m f x))) (WrapNat (n - m)))
 
+inf :: Nat
+inf = const . fix
+
