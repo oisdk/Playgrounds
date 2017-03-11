@@ -1,3 +1,4 @@
 -- Haskell Playground 1.0
 {-# LANGUAGE RebindableSyntax #-}
 
+showN (5 ^ 2)

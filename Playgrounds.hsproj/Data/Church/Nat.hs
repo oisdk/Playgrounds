@@ -5,6 +5,7 @@
 module Data.Church.Nat where
   
 import Prelude (String, id, (.), const, ($), otherwise, flip)
+import Data.Function (fix)
 import qualified Prelude
 import Data.Church.Bool
 
@@ -45,7 +46,7 @@ infixl 6 -
 
 infixr 8 ^
 (^) :: Nat -> Nat -> Nat
-(^) = ($)
+(^) = flip ($)
 
 fromInteger :: Prelude.Integer -> Nat
 fromInteger n = go (Prelude.abs n) where
@@ -72,3 +73,11 @@ infix 4 <=
 infix 4 >=
 (>=) :: Nat -> Nat -> Bool
 (>=) n m t f = n (\c (WrapNat m) -> m (const (c (WrapNat (pred m)))) t) (\(WrapNat m) -> m (const f) t) (WrapNat m)
+
+infixl 7 /
+(/) :: Nat -> Nat -> Nat
+(/) n = divide1 (succ n)
+
+divide1 :: Nat -> Nat -> Nat
+divide1 = fix (\d1 n m f x -> (\(WrapNat d) -> isZero d (0 f x) (f (d1 d m f x))) (WrapNat (n - m)))
+
