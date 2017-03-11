@@ -29,6 +29,7 @@ Executable Playgrounds
       Assignments.HS3
       Data.Semiring
       Data.Church.List
+      Data.Church.Bool
       Data.Church.Nat
       Data.Church.Pair
       Data.Church.Prelude

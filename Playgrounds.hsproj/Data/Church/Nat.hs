@@ -1,42 +1,74 @@
-{-# LANGUAGE RankNTypes       #-}
-{-# LANGUAGE RebindableSyntax #-}
+{-# LANGUAGE RankNTypes          #-}
+{-# LANGUAGE RebindableSyntax    #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Data.Church.Nat where
   
-import Data.Church.Prelude
-import qualified Prelude as NonChurch
+import Prelude (String, id, (.), const, ($), otherwise, flip)
+import qualified Prelude
+import Data.Church.Bool
 
-newtype Nat = N { r :: forall a. (a -> a) -> a -> a }
+type Nat = forall a. (a -> a) -> (a -> a)
+newtype WrappedNat = WrapNat { unwrapNat :: Nat }
+type BoundNat a = (a -> a) -> (a -> a)
 
-instance Show Nat where
-  show n = show (r n succ 0)
-  
-instance Enum Nat where
-  succ n = N (\f x -> f (r n f x))
-  pred n = N (\f x -> r n (\g h -> h (g f)) (const x) id)
-  toEnum n = if n == 0 then N (\f x -> x) else succ (toEnum (n-1))
-  fromEnum n = r n succ 0
+pZero, pTwo :: Prelude.Integer
+pZero = Prelude.read "0"
+pTwo = Prelude.read "2"
 
-inf :: Nat
-inf = N (const.fix)
+cZero, cOne, cTwo :: Nat
+cZero _ x = x
+cOne f x = f x
+cTwo f x = f (f x)
+
+showN :: Nat -> String
+showN n = Prelude.show (n Prelude.succ pZero)
+
+succ :: Nat -> Nat
+succ n f x = f (n f x)
+
+pred :: Nat -> Nat
+pred n f x = n (\g h -> h (g f)) (const x) id
+
+infixl 6 +
+(+) :: Nat -> Nat -> Nat
+(+) n m f = n f . m f
+
+infixl 7 *
+(*) :: Nat -> Nat -> Nat
+(*) n m = n . m
+
+infixl 6 -
+(-) :: Nat -> Nat -> Nat
+(-) n m = unwrapNat (m p (WrapNat n)) where
+  p (WrapNat x) = WrapNat (pred x)
+
+infixr 8 ^
+(^) :: Nat -> Nat -> Nat
+(^) = ($)
+
+fromInteger :: Prelude.Integer -> Nat
+fromInteger n = go (Prelude.abs n) where
+  go :: Prelude.Integer -> Nat
+  go m | m Prelude.== pZero = (\_ x -> x)
+       | Prelude.odd m = succ r
+       | otherwise = r
+       where r = cTwo * go (m `Prelude.quot` pTwo)
 
 isZero :: Nat -> Bool
-isZero n = r n (const false) true
+isZero n = n (const false) true
 
 nonZero :: Nat -> Bool
-nonZero = not . isZero
+nonZero n = n (const true) false
 
-instance Eq Nat where
-  (==) n = r n (\f m -> nonZero m && f (pred m)) isZero
+infix 4 ==
+(==) :: Nat -> Nat -> Bool
+(==) n m t f = n (\c (WrapNat m) -> m (const (c (WrapNat (pred m)))) f) (\(WrapNat n) -> n (const f) t) (WrapNat m)
 
-instance Ord Nat where
-  (<=) = flip f where
-    f n = r n (\f m -> isZero m || f (pred m)) isZero
-    
-instance NonChurch.Num Nat where
-  fromInteger n = if 0 == n then N (\_ x -> x) else succ (fromInteger (n-1))
-  N n + N m = N $ \f -> n f . m f
-  N n * N m = N (n . m)
-  abs = id
-  signum (N n) = n (const 1) 0
-  n - N m = m pred n
+infix 4 <=
+(<=) :: Nat -> Nat -> Bool
+(<=) n m = m >= n
+  
+infix 4 >=
+(>=) :: Nat -> Nat -> Bool
+(>=) n m t f = n (\c (WrapNat m) -> m (const (c (WrapNat (pred m)))) t) (\(WrapNat m) -> m (const f) t) (WrapNat m)

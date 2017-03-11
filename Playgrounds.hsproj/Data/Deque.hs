@@ -59,4 +59,3 @@ instance IsList (Deque a) where
 
 reverse :: Deque a -> Deque a
 reverse (xs :-: ys) = ys :-: xs
-
