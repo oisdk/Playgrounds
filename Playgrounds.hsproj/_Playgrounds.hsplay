@@ -6,3 +6,5 @@
 --let c = z
 
 --inferReified ((+) <$> die <*> die)
+
+--runUnif example False

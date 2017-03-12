@@ -19,9 +19,9 @@ Executable Playgrounds
       semigroups -any,
       transformers -any,
       base -any,
+      lens -any,
       containers -any,
       QuickCheck -any,
-      lens -any,
       mmorph -any
   other-modules:
       Assignments.HS2
@@ -31,8 +31,9 @@ Executable Playgrounds
       Data.Church.List
       Data.Church.Bool
       Data.Church.Nat
+      Data.Church.Maybe
       Data.Church.Pair
-      Data.Church.Prelude
+      Data.Church.Binary
       Data.Traversable.Extras
       Data.Deque
       Data.Safe
@@ -56,13 +57,16 @@ Executable Playgrounds
       Text.Parse
       Type.List
       Control.Applicative.Alternative
-      Control.Monad.Complexity
       Control.Monad.Church.State
       Control.Monad.Church.Writer
-      Control.Monad.Tardis
+      Control.Monad.Prob.List
       Control.Monad.Prob.Tree
-      Control.Monad.Private
+      Control.Monad.Prob.Map
       Control.Monad.Undo
+      Control.Monad.Complexity
+      Control.Monad.Constrained
+      Control.Monad.Tardis
+      Control.Monad.Private
       Test.Function
       Cards
       Numeric.Small

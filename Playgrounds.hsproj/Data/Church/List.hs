@@ -7,6 +7,7 @@ module Data.Church.List where
 
 import GHC.Base (build)
 import Prelude hiding (dropWhile, head, take)
+import Data.Church.Pair
 
 type List a = forall b. (a -> b -> b) -> b -> b
 
@@ -68,3 +69,27 @@ take n xs f b = xs step (const b) n
   where
     step x g 0 = b
     step x g n = f x (g (n-1))
+
+newtype WrappedZip a b
+  = WrapZip { unwrapZip :: forall w. (a -> b -> w) -> w -> w }
+
+newtype WrappedList a
+  = WrapList { unwrapList :: List a }
+
+foldr2 :: (a -> b -> c -> c) -> c -> List a -> List b -> c
+foldr2 c b xs ys = xs f (const b) (WrapList ys) where
+  f e r (WrapList l) = unwrapZip (l tailZip nilZip) (step e r) b
+  nilZip = WrapZip (const id)
+  step e1 r1 e2 r2 = c e1 e2 (r1 r2)
+  tailZip n (WrapZip z) = WrapZip (\a _ -> a n (WrapList l)) where
+    l g i = z h i where
+      h t (WrapList x) = g t (x g i)
+
+zipWithAccum :: (acc -> a -> b -> Pair c acc) -> acc -> List a -> List b -> List c
+zipWithAccum f b xs ys = unwrapList (foldr2 g (const (WrapList nil)) xs ys b) where
+  g x y c acc = f acc x y (\z -> cons' z . c)
+  cons' x (WrapList xs) = WrapList (cons x xs)
+
+
+
+
