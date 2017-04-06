@@ -8,6 +8,10 @@ import qualified Prelude
 
   
 type Bool = forall a. a -> a -> a
+
+ifThenElse :: Bool -> a -> a -> a
+ifThenElse = id
+
 newtype WrappedBool = WrapBool { unwrapBool :: Bool }
 
 true, false :: Bool

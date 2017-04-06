@@ -1,2 +1,2 @@
 -- Haskell Playground 1.0
-build (const id)
+take 10 (stars ["a","b"])

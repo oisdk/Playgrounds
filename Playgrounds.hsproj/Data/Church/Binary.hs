@@ -16,3 +16,5 @@ pZero = Prelude.read "0"
 toIntegerBin :: Binary -> Prelude.Integer
 toIntegerBin xs = xs (\e a -> (e Prelude.succ id) (a Prelude.* pTwo)) pZero
 
+--(+) :: Binary -> Binary -> Binary
+--(+)

@@ -1,13 +1,10 @@
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE RankNTypes   #-}
 {-# LANGUAGE BangPatterns #-}
-
 
 module Data.Church.List where
 
 import GHC.Base (build)
 import Prelude hiding (dropWhile, head, take)
-import Data.Church.Pair
 
 type List a = forall b. (a -> b -> b) -> b -> b
 
@@ -84,11 +81,6 @@ foldr2 c b xs ys = xs f (const b) (WrapList ys) where
   tailZip n (WrapZip z) = WrapZip (\a _ -> a n (WrapList l)) where
     l g i = z h i where
       h t (WrapList x) = g t (x g i)
-
-zipWithAccum :: (acc -> a -> b -> Pair c acc) -> acc -> List a -> List b -> List c
-zipWithAccum f b xs ys = unwrapList (foldr2 g (const (WrapList nil)) xs ys b) where
-  g x y c acc = f acc x y (\z -> cons' z . c)
-  cons' x (WrapList xs) = WrapList (cons x xs)
 
 
 

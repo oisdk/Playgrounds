@@ -13,3 +13,6 @@ toDigs :: (Integral a, Num a) => a -> a -> [a]
 toDigs base =
   unfoldl ((`quotRem` base) <-< ensure (>0))
   
+pred' :: [Int] -> [Int]
+pred' (1:xs) = (0:xs)
+pred' (0:xs) = 1 : pred' xs

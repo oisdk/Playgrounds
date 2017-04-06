@@ -70,31 +70,3 @@ instance Monad (Odds o) where
   
 sample :: (Integral o, Random o, Ord o, RandomGen g) => Odds o a -> g -> (a, g)
 sample = runState . foldOdds (\x (n:%:d) y -> bool y x . (n>) =<< state (randomR (0,d))) pure
-
-  
-
-
---  go (Certain x) = pure x
---  go (Choice x (n:%:d) y) =
---    go . bool y x . (n>) =<< state (randomR (0,d))
-  
---lcd :: Foldable f => f Rational -> Integer
---lcd = foldl' (\a e -> lcm a (denominator e)) 1
---
---toDistrib :: Odds a -> [(a,Integer)]
---toDistrib = factorOut . foldOdds f b where
---  b x = [(x,1)]
---  f l p r = (map.fmap) (n%t*) l ++ (map.fmap) (d%t*) r where
---    n = numerator p
---    d = denominator p
---    t = n + d
---  factorOut xs = (map.fmap) (numerator . (lcd'*)) xs where
---    lcd' = fromIntegral . lcd . map snd $ xs
---
---counts :: (Ord a, Num n) => [(a,n)] -> [(a,n)]
---counts = 
---  Map.assocs . 
---  Map.fromListWith (+)
---      
---compress :: Ord a => Odds a -> Odds a
---compress xs = let Just ys = (fromDistrib . counts . toDistrib) xs in ys

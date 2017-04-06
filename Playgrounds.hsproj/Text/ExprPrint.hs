@@ -1,44 +1,53 @@
 {-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE LambdaCase    #-}
 
-module Text.ExprPrint
-  ( Side(..)
-  , ShowExpr(..)
-  , Operator(..)
-  , showExpr
-  ) where
+module Text.ExprPrint (Side(..), ShowExpr(..), showExpr, showSExpr) where
 
-import           Control.Arrow
-import           Data.Semigroup
+import Data.Semigroup
+import Data.Coerce
+import Control.Arrow ((&&&))
 
-data Side = L | R deriving Eq
+data Side = L | R deriving (Eq, Show)
 
 data ShowExpr t e
-  = Lit t
-  | Unary  (Operator t) e
-  | Binary (Operator t) e e
+  = ShowLit { _repr :: t }
+  | Prefix  { _repr :: t, _prec :: Int, _assoc :: Side, _child  :: e }
+  | Postfix { _repr :: t, _prec :: Int, _assoc :: Side, _child  :: e }
+  | Binary  { _repr :: t, _prec :: Int, _assoc :: Side, _lchild :: e
+                                                      , _rchild :: e }
   deriving Functor
 
-data Operator t = Operator
-  { _associativity  :: Side
-  , _precedence     :: Int
-  , _representation :: t }
+assoc :: ShowExpr t e -> Maybe (Int,Side)
+assoc (ShowLit {}) = Nothing
+assoc xs = Just (_prec xs, _assoc xs)
 
+hylozygo
+    :: Functor f
+    => (f a -> a) -> (f (a, b) -> b) -> (c -> f c) -> c -> b
+hylozygo palg alg coalg = snd . go where
+  go = (palg . fmap fst &&& alg) . fmap go . coalg
+
+showExprAlg :: Semigroup t
+            => (t -> t)
+            -> ShowExpr t (Maybe (Int,Side), t)
+            -> t
+showExprAlg prns = go where
+  go (ShowLit t)                 =                     t
+  go (Prefix  t i a       (q,y)) =                     t <> ifPrns R i a q y
+  go (Postfix t i a (p,x))       = ifPrns L i a p x <> t
+  go (Binary  t i a (p,x) (q,y)) = ifPrns L i a p x <> t <> ifPrns R i a q y
+  ifPrns sid op oa (Just (ip,ia))
+    | ip < op || ip == op && (ia /= oa || sid /= oa) = prns
+  ifPrns _ _ _ _ = id
+  
 showExpr :: Semigroup t
          => (t -> t)
          -> (e -> ShowExpr t e)
          -> e -> t
-showExpr prns proj = rec . proj where
-  rec = showAlg . fmap ((prec &&& rec) . proj)
-  showAlg = \case
-    Lit t                               ->                     t
-    Unary  (Operator s r t) (p,x)       ->                     t <> ifPrns R s r p x
-    Binary (Operator s r t) (p,x) (q,y) -> ifPrns L s r p x <> t <> ifPrns R s r q y
-  ifPrns sid oa op (Just (ia,ip))
-    | ip < op || ip == op && (ia /= oa || oa /= sid) = prns
-  ifPrns _ _ _ _ = id
-  prec = \case
-    Lit _                       -> Nothing
-    Unary  (Operator s r _) _   -> Just (s,r)
-    Binary (Operator s r _) _ _ -> Just (s,r)
-{-# INLINABLE showExpr #-}
+showExpr = hylozygo assoc . showExprAlg
+
+showSExpr :: (e -> ShowExpr ShowS e) -> e -> ShowS
+showSExpr coalg 
+  = appEndo 
+  . showExpr 
+    (\e -> Endo ('(':) <> e <> Endo (')':) ) 
+    (coerce coalg)

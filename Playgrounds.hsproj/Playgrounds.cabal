@@ -7,8 +7,8 @@ stability: experimental
 author: Donnacha Oisín Kidney
 data-files:
     dict.txt
-x-ghc-framework-version: 7.10.3-5.18-2
-x-last-ide-version: HfM1.3.2
+x-ghc-framework-version: 7.10.3-6.29-1
+x-last-ide-version: HfM1.4.0
 Executable Playgrounds
   main-is: Playgrounds.hs
   buildable: True
@@ -19,47 +19,25 @@ Executable Playgrounds
       semigroups -any,
       transformers -any,
       base -any,
-      lens -any,
       containers -any,
       QuickCheck -any,
-      mmorph -any
+      lens -any,
+      mmorph -any,
+      profunctors -any
   other-modules:
       Assignments.HS2
       Assignments.HS4
       Assignments.HS3
-      Data.Semiring
-      Data.Church.List
-      Data.Church.Bool
-      Data.Church.Nat
-      Data.Church.Maybe
-      Data.Church.Pair
-      Data.Church.Binary
-      Data.Traversable.Extras
-      Data.Deque
-      Data.Safe
-      Data.Functor.Recursive
-      Data.Unfold
-      Data.RList
-      Data.Function.Chain
-      Data.Function.Operators
-      Data.Function.Utils
-      Data.Foldable.Tricks
-      Data.StrictPair
-      Data.Resources
-      Data.Scott.List
-      Data.Semiring.Map
-      Data.Semiring.Test
-      Data.Semiring.Numeric
-      Data.Semiring.Free
       Debug
-      Flip
       Text.ExprPrint
       Text.Parse
+      Flip
       Type.List
       Control.Applicative.Alternative
       Control.Monad.Church.State
       Control.Monad.Church.Writer
       Control.Monad.Prob.List
+      Control.Monad.Prob.Cons
       Control.Monad.Prob.Tree
       Control.Monad.Prob.Map
       Control.Monad.Undo
@@ -67,7 +45,40 @@ Executable Playgrounds
       Control.Monad.Constrained
       Control.Monad.Tardis
       Control.Monad.Private
-      Test.Function
-      Cards
       Numeric.Small
       Numeric.Bases
+      Mat
+      Data.Semiring
+      Data.Church.List
+      Data.Church.Either
+      Data.Church.Bool
+      Data.Church.LeftFold
+      Data.Church.Nat
+      Data.Church.Pair
+      Data.Church.These
+      Data.Church.Maybe
+      Data.Church.VecUnfold
+      Data.Church.Binary
+      Data.Coerce.Helpers
+      Data.Convolutions
+      Data.Traversable.Extras
+      Data.Deque
+      Data.Unfold
+      Data.Function.Chain
+      Data.Function.Operators
+      Data.Function.Utils
+      Data.RList
+      Data.Foldable.Tricks
+      Data.Foldable.Safe
+      Data.Strict.Counter
+      Data.Strict.Maybe
+      Data.Strict.Pair
+      Data.Resources
+      Data.Semiring.Map
+      Data.Semiring.Test
+      Data.Semiring.Numeric
+      Data.Semiring.Free
+      Data.Scott.List
+      Equiv
+      Test.Function
+      Cards

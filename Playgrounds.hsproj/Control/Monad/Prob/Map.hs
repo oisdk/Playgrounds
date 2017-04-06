@@ -13,32 +13,31 @@ import Control.Monad.Constrained
 
 import Control.Monad.Prob.List
 
-newtype Weighted s a
-  = Weighted
-  { runWeighted :: Map a s }
+newtype Prob s a
+  = Prob
+  { runProb :: Map a s }
   
-reify :: (Semiring s, Ord a) => Dist s a -> Weighted s a
-reify (Dist xs) = Weighted (Map.fromListWith (<+>) xs)
+reify :: (Num s, Ord a) => Dist s a -> Map a s
+reify (Dist xs) = Map.fromListWith (+) xs
 
-reflect :: Weighted s a -> Dist s a
-reflect (Weighted xs) = Dist (Map.toList xs)
+reflect :: Map a s -> Dist s a
+reflect xs = Dist (Map.toList xs)
   
-instance (Semiring s, Ord a) => Monoid (Weighted s a) where
-  mempty = Weighted Map.empty
-  mappend (Weighted xs) (Weighted ys)
-    = Weighted (Map.unionWith (<+>) xs ys)
+instance (Semiring s, Ord a) => Monoid (Prob s a) where
+  mempty = Prob Map.empty
+  mappend (Prob xs) (Prob ys)
+    = Prob (Map.unionWith (<+>) xs ys)
     
-instance Semiring s => Functor (Weighted s) where
-  type Suitable (Weighted s) a = Ord a
-  fmap f (Weighted xs) = Weighted (Map.mapKeysWith (<+>) f xs)
+instance Semiring s => Functor (Prob s) where
+  type Suitable (Prob s) a = Ord a
+  fmap f (Prob xs) = Prob (Map.mapKeysWith (<+>) f xs)
   
-instance Semiring s => Applicative (Weighted s) where
+instance Semiring s => Applicative (Prob s) where
   lower = reify . lowerP . hoist reflect
   
 scaled
-    :: Semiring s => Weighted s a -> s -> Weighted s a
-scaled (Weighted xs) x = Weighted (fmap (x <.>) xs)
-
+    :: Semiring s => Prob s a -> s -> Prob s a
+scaled (Prob xs) x = Prob (fmap (x <.>) xs)
   
-instance Semiring s => Monad (Weighted s) where
-     Weighted xs >>= f = Map.foldMapWithKey (scaled . f) xs
+instance Semiring s => Monad (Prob s) where
+     Prob xs >>= f = Map.foldMapWithKey (scaled . f) xs

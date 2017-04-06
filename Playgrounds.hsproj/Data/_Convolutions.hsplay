@@ -1,0 +1,10 @@
+-- Haskell Playground 1.0
+{-# LANGUAGE ScopedTypeVariables #-}
+
+quickCheck (\xs (ys :: [Int]) -> mul' xs ys == (xs <.> ys))
+
+[] <.> [] :: [Int]
+mul' [] [] :: [Int]
+
+
+[1,2,3] <.> [4,5,6]
